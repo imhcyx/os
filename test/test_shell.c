@@ -102,22 +102,35 @@ static struct task_info *test_tasks[16] = {&task1, &task2, &task3,
 static int num_test_tasks = 15;
 
 #define SHELL_Y 21
-#define SHELL_HEIGHT (SCREEN_HEIGHT-SHELL_Y+1)
+#define SHELL_HEIGHT (SCREEN_HEIGHT-SHELL_Y-1)
 
 static char scrbuf[SHELL_HEIGHT][SCREEN_WIDTH+1]; // each line ends with '\0'
 static int curline = 0, startline = 0;
 static int cursor = 0;
 
+static void flushline(int line) {
+  int i;
+  for (i=0; i<SCREEN_WIDTH; i++)
+    scrbuf[line][i] = ' ';
+  scrbuf[line][SCREEN_WIDTH] = '\0';
+}
+
+static void scrinit() {
+  int i;
+  for (i=0; i<SHELL_HEIGHT; i++)
+    flushline(i);
+}
+
 static void breakline() {
+  int i;
   curline = (curline + 1) % SHELL_HEIGHT;
   if (startline == curline)
     startline = (curline + 1) % SHELL_HEIGHT;
   cursor = 0;
-  scrbuf[curline][0] = '\0';
+  flushline(curline);
 }
 
 static void backline() {
-  scrbuf[curline][0] = '\0';
   if (startline != curline)
     curline = (curline + SHELL_HEIGHT - 1) % SHELL_HEIGHT;
   for (cursor=0; scrbuf[curline][cursor]; cursor++);
@@ -126,14 +139,14 @@ static void backline() {
 static void refresh() {
   int i, y;
   screen_move_cursor(0, SHELL_Y - 1);
-  printf("--------------- COMMAND ---------------");
+  printf("-------------------- COMMAND --------------------");
   i = startline-1;
   y = SHELL_Y;
   do {
     i = (i+1) % SHELL_HEIGHT;
     screen_move_cursor(0, y++);
     printf(scrbuf[i]);
-  } while (i != curline && scrbuf[i][0]);
+  } while (i != curline);
   sys_reflush();
 }
 
@@ -149,7 +162,7 @@ static void putchar(char c) {
 static void delchar() {
   if (cursor <= 0) backline();
   if (cursor > 0)
-    scrbuf[curline][--cursor] = '\0';
+    scrbuf[curline][--cursor] = ' ';
   refresh();
 }
 
@@ -182,15 +195,50 @@ static int shell_printf(const char *fmt, ...) {
 void test_shell()
 {
   char ch;
+  char buf[256];
+  int len;
+  scrinit();
   while (1)
   {
     printstr("UCAS>");
-    ch = 0;
-    while (!ch) {
-      disable_interrupt();
-      ch = read_uart_ch();
-      enable_interrupt();
-    } 
-    shell_printf("ch: %d\n", ch);
+    len = 0;
+    while (1) {
+      ch = 0;
+      while (!ch) {
+        disable_interrupt();
+        ch = read_uart_ch();
+        enable_interrupt();
+      } 
+      if (ch == '\r') {
+        putchar('\n');
+        buf[len] = '\0';
+        break;
+      }
+      else if (ch == '\x7f') {
+        if (len > 0) {
+          len--;
+          delchar();
+        }
+      }
+      else {
+        if (len < sizeof(buf)-1) {
+          buf[len++] = ch;
+          putchar(ch);
+        }
+      }
+    }
+    shell_printf("Input: %s\n", buf);
+#if 0
+    // debug
+    {
+      int i;
+      for (i=0; i<SHELL_HEIGHT; i++) {
+        vt100_move_cursor(1, i+1);
+        printk(scrbuf[i]);
+      }
+      vt100_move_cursor(1, 12);
+      printk("%d %d", curline, startline);
+    }
+#endif
   }
 }
