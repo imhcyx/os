@@ -6,10 +6,13 @@
 #include "screen.h"
 
 pcb_t pcb[NUM_MAX_TASK];
-int pcbcount = 0;
 
 queue_t ready_queue;
 queue_t sleep_queue;
+
+// list of initialized locks
+// TODO: fix this workaround
+mutex_lock_t *mutex_list[256];
 
 /* current running task PCB */
 pcb_t *current_running = NULL;
@@ -30,21 +33,35 @@ static uint32_t alloc_stack()
 }
 
 // alloc a pcb
-pcb_t *pcb_alloc(task_type_t type)
+static pcb_t *pcb_alloc(task_type_t type)
 {
-  pcb_t *proc;
+  int i;
+  pcb_t *proc = NULL;
 
-  // TODO: reuse pcb of exited task
+  for (i=0; i<NUM_MAX_TASK; i++) {
+    if (pcb[i].status == TASK_UNUSED) {
+      proc = &pcb[i];
+      break;
+    }
+  }
+  if (!proc) return NULL;
 
-  if (pcbcount >= NUM_MAX_TASK)
-    return NULL;
-
-  proc = &pcb[pcbcount++];
   proc->pid = process_id++;
   proc->type = type;
   proc->status = TASK_INIT;
+  proc->killed = 0;
+  proc->queue = NULL;
+
+  proc->prev = NULL;
+  proc->next = NULL;
+
+  queue_init(&proc->waitqueue);
 
   return proc;
+}
+
+static void pcb_free(pcb_t * pcb) {
+  pcb->status = TASK_UNUSED;
 }
 
 // this is the real entry point for each task
@@ -52,35 +69,26 @@ static void task_init()
 {
   ((void(*)())current_running->entrypoint)();
   // the task should be killed here
+  for(;;) exit();
 }
 
-pcb_t *new_task(struct task_info *task)
+void sched_init()
 {
   pcb_t *proc;
+  int i;
 
-  proc = pcb_alloc(task->type);
+  // init queues
+  queue_init(&ready_queue);
+  queue_init(&sleep_queue);
+
+  // create initial kernel process
+  proc = pcb_alloc(KERNEL_PROCESS);
   if (!proc) {
     printk("failed to alloc pcb\n");
-    return NULL;
+    for(;;);
   }
-
-  // alloc kernel stack
-  proc->kernel_stack_top = alloc_stack();
-  // set sp
-  proc->kernel_context.regs[29] = proc->kernel_stack_top;
-  // set ra
-  proc->kernel_context.regs[31] = (uint32_t)task_init;
-  // set epc
-  proc->kernel_context.cp0_epc = (uint32_t)task_init;
-  proc->entrypoint = task->entry_point;
-  proc->priority = task->priority;
-  proc->dynamic_priority = 0;
-  proc->status = TASK_READY;
-
-  // add to ready queue
-  queue_push(&ready_queue, proc);
-
-  return proc;
+  proc->status = TASK_RUNNING;
+  current_running = proc;
 }
 
 void scheduler(void)
@@ -138,8 +146,72 @@ void scheduler(void)
   screen_cursor_y = current_running->cursor_y;
 }
 
+pcb_t *spawn(struct task_info *task)
+{
+  pcb_t *proc;
+
+  proc = pcb_alloc(task->type);
+  if (!proc) {
+    printk("failed to alloc pcb\n");
+    return NULL;
+  }
+
+  // TODO: strncpy
+  strcpy(&proc->name, task->name);
+  // alloc kernel stack
+  // currently each stack area is pinned to pcb (TODO:)
+  if (!proc->stack_top)
+    proc->stack_top = alloc_stack();
+  // set sp
+  proc->context.regs[29] = proc->stack_top;
+  // set ra
+  proc->context.regs[31] = (uint32_t)task_init;
+  // set epc
+  proc->context.cp0_epc = (uint32_t)task_init;
+  proc->entrypoint = task->entry_point;
+  proc->priority = task->priority;
+  proc->dynamic_priority = 0;
+  proc->status = TASK_READY;
+
+  // add to ready queue
+  queue_push(&ready_queue, proc);
+
+  return proc;
+}
+
+void kill(pcb_t *proc) {
+  if (atomic_xchg(&proc->killed, 1) == 0) {
+    if (proc->status != TASK_RUNNING && proc->status != TASK_READY) {
+    queue_remove(proc->queue, proc);
+    queue_push(&ready_queue, proc);
+    }
+  }
+}
+
+void exit() {
+  int i;
+  // NOTE: must be called in interrupt context
+  current_running->status = TASK_EXITED;
+  // release mutex locks
+  for (i=0; i<256; i++)
+    if (mutex_list[i] && mutex_list[i]->owner == current_running)
+      do_mutex_lock_release(mutex_list[i]);
+  // TODO: release other resources
+  // wake up waiting processes
+  do_unblock_all(&current_running->waitqueue);
+  // after waking up waiting processes, clean up by self
+  pcb_free(current_running);
+  scheduler();
+}
+
+void wait(pcb_t *proc) {
+  // NOTE: must be called in interrupt context
+  do_block(&proc->waitqueue);
+}
+
 void do_sleep(uint32_t sleep_time)
 {
+  // NOTE: must be called in interrupt context
   current_running->status = TASK_BLOCKED;
   current_running->wakeuptime = get_timer() + sleep_time * 10000; // ?
   queue_push(&sleep_queue, current_running);
@@ -148,6 +220,7 @@ void do_sleep(uint32_t sleep_time)
 
 void do_block(queue_t *queue)
 {
+  // NOTE: must be called in interrupt context
   // block the current_running task into the queue
   current_running->status = TASK_BLOCKED;
   queue_push(queue, current_running);

@@ -11,7 +11,8 @@ main:
   lw $a0, kernel
   li $a1, 0x200
   lw $a2, os_size
-  lh $a2, ($a2)
+  lhu $a2, ($a2)
+  sll $a2, 9
   lw $ra, kernel_main
   lw $t0, read_sd_card
   j $t0

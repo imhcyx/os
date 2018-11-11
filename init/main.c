@@ -32,23 +32,8 @@
 #include "common.h"
 #include "syscall.h"
 
-static void init_pcb()
-{
-  pcb_t *proc;
-  int i;
-
-  // init queues
-  queue_init(&ready_queue);
-  queue_init(&sleep_queue);
-
-  // create initial kernel process
-  proc = pcb_alloc(KERNEL_PROCESS);
-  if (!proc) {
-    printk("failed to alloc pcb\n");
-    for(;;);
-  }
-  proc->status = TASK_RUNNING;
-  current_running = proc;
+static void init_pcb() {
+  sched_init();
 }
 
 static void init_exception_handler()
@@ -113,9 +98,6 @@ void __attribute__((section(".entry_function"))) _start(void)
 	init_screen();
 	printk("> [INIT] SCREEN initialization succeeded.\n");
 
-  struct task_info shell = {"shell", (uint32_t)&test_shell, USER_PROCESS};
-  new_task(&shell);
-
 	// enable interrupt and set BEV=0
   __asm__ volatile (
     "mfc0 $t0, $12\n"
@@ -127,10 +109,10 @@ void __attribute__((section(".entry_function"))) _start(void)
 	
 	while (1)
 	{
-		// (QAQQQQQQQQQQQ)
-		// If you do non-preemptive scheduling, you need to use it to surrender control
-		//do_scheduler();
-    sys_sleep(0);
+    struct task_info shell = {"shell", (uint32_t)&test_shell, USER_PROCESS};
+    pcb_t *proc = spawn(&shell);
+    // wait must be called in interrupt context
+    sys_waitpid(proc->pid);
 	};
 	return;
 }

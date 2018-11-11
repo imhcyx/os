@@ -54,6 +54,7 @@ typedef struct regs_context
 } regs_context_t; /* 128 + 28 = 156B */
 
 typedef enum {
+    TASK_UNUSED = 0,
     TASK_INIT,
     TASK_BLOCKED,
     TASK_RUNNING,
@@ -72,13 +73,16 @@ typedef enum {
 typedef struct pcb
 {
     /* register context */
-    regs_context_t kernel_context;
+    regs_context_t context;
     
-    uint32_t kernel_stack_top;
+    uint32_t stack_top;
 
     /* queue */
     void *prev;
     void *next;
+
+    /* process name */
+    char name[16];
 
     /* process id */
     pid_t pid;
@@ -89,6 +93,12 @@ typedef struct pcb
     /* BLOCK | READY | RUNNING */
     task_status_t status;
 
+    /* killed flah */
+    int killed;
+
+    /* queue the task is in */
+    queue_t *queue;
+
     /* entry point */
     uint32_t entrypoint;
 
@@ -98,6 +108,9 @@ typedef struct pcb
 
     /* time to wake up */
     uint32_t wakeuptime;
+
+    /* wait queue */
+    queue_t waitqueue;
 
     /* cursor position */
     int cursor_x;
@@ -127,8 +140,12 @@ extern pid_t process_id;
 extern pcb_t pcb[NUM_MAX_TASK];
 extern uint32_t initial_cp0_status;
 
-pcb_t *pcb_alloc(task_type_t);
-pcb_t *new_task(struct task_info*);
+void sched_init();
+
+pcb_t *spawn(struct task_info*);
+void kill(pcb_t*);
+void exit();
+void wait(pcb_t*);
 
 void do_scheduler(void);
 void do_sleep(uint32_t);

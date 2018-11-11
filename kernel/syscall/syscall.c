@@ -5,23 +5,39 @@
 #include "syscall.h"
 
 static int _spawn(int arg1, int arg2, int arg3) {
+  spawn((struct task_info*)arg1);
   return 0;
 }
 
 static int _kill(int arg1, int arg2, int arg3) {
+  int i;
+  for (i=0; i<NUM_MAX_TASK; i++) {
+    if (pcb[i].status != TASK_UNUSED && pcb[i].pid == arg1) {
+      kill(&pcb[i]);
+      break;
+    }
+  }
   return 0;
 }
 
 static int _exit(int arg1, int arg2, int arg3) {
+  exit();
   return 0;
 }
 
 static int _waitpid(int arg1, int arg2, int arg3) {
+  int i;
+  for (i=0; i<NUM_MAX_TASK; i++) {
+    if (pcb[i].status != TASK_UNUSED && pcb[i].pid == arg1) {
+      wait(&pcb[i]);
+      break;
+    }
+  }
   return 0;
 }
 
 static int _getpid(int arg1, int arg2, int arg3) {
-  return 0;
+  return current_running->pid;
 }
 
 static int _sleep(int arg1, int arg2, int arg3) {
@@ -123,66 +139,71 @@ void init_syscall_table() {
 int system_call_helper()
 {
   int fn, arg1, arg2, arg3;
-  fn = current_running->kernel_context.regs[4];
-  arg1 = current_running->kernel_context.regs[5];
-  arg2 = current_running->kernel_context.regs[6];
-  arg3 = current_running->kernel_context.regs[7];
+  fn = current_running->context.regs[4];
+  arg1 = current_running->context.regs[5];
+  arg2 = current_running->context.regs[6];
+  arg3 = current_running->context.regs[7];
   if (syscall[fn]) {
     uint32_t ret;
     ret = syscall[fn](arg1, arg2, arg3);
-    current_running->kernel_context.regs[2] = ret;
+    current_running->context.regs[2] = ret;
   }
 }
 
 void sys_spawn(task_info_t* task) {
+  invoke_syscall(syscall_spawn, (int)task, IGNORE, IGNORE);
 }
 
 
 void sys_kill(int pid) {
+  invoke_syscall(syscall_kill, pid, IGNORE, IGNORE);
 }
 
 void sys_exit() {
+  invoke_syscall(syscall_exit, IGNORE, IGNORE, IGNORE);
 }
 
 void sys_waitpid(int pid) {
+  invoke_syscall(syscall_waitpid, pid, IGNORE, IGNORE);
 }
 
 int sys_getpid() {
+  return invoke_syscall(syscall_getpid, IGNORE, IGNORE, IGNORE);
 }
 
 void sys_sleep(uint32_t time)
 {
-    invoke_syscall(syscall_sleep, time, IGNORE, IGNORE);
+  invoke_syscall(syscall_sleep, time, IGNORE, IGNORE);
 }
 
 void sys_write(char *buff)
 {
-    invoke_syscall(syscall_write, (int)buff, IGNORE, IGNORE);
+  invoke_syscall(syscall_write, (int)buff, IGNORE, IGNORE);
 }
 
 void sys_reflush()
 {
-    invoke_syscall(syscall_reflush, IGNORE, IGNORE, IGNORE);
+  invoke_syscall(syscall_reflush, IGNORE, IGNORE, IGNORE);
 }
 
 void sys_move_cursor(int x, int y)
 {
-    invoke_syscall(syscall_cursor, x, y, IGNORE);
+  invoke_syscall(syscall_cursor, x, y, IGNORE);
 }
 
 void mutex_lock_init(mutex_lock_t *lock)
 {
-    invoke_syscall(syscall_mutex_lock_init, (int)lock, IGNORE, IGNORE);
+  invoke_syscall(syscall_mutex_lock_init, (int)lock, IGNORE, IGNORE);
 }
 
 void mutex_lock_acquire(mutex_lock_t *lock)
 {
-    invoke_syscall(syscall_mutex_lock_acquire, (int)lock, IGNORE, IGNORE);
+  invoke_syscall(syscall_mutex_lock_acquire, (int)lock, IGNORE, IGNORE);
 }
 
 void mutex_lock_release(mutex_lock_t *lock)
 {
-    invoke_syscall(syscall_mutex_lock_release, (int)lock, IGNORE, IGNORE);
+  invoke_syscall(syscall_mutex_lock_release, (int)lock, IGNORE, IGNORE);
 }
 
 void semaphore_init(semaphore_t *sem, int init) {

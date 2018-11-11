@@ -2,7 +2,7 @@
 #include "sched.h"
 #include "syscall.h"
 
-static inline uint32_t atomic_xchg(uint32_t *mem, uint32_t newvalue) {
+uint32_t atomic_xchg(uint32_t *mem, uint32_t newvalue) {
   uint32_t oldvalue;
   __asm__ volatile (
     ".set noreorder\n"
@@ -41,6 +41,11 @@ void do_mutex_lock_init(mutex_lock_t *lock)
   lock->status = UNLOCKED;
   lock->owner = NULL;
   queue_init(&lock->queue);
+  // register mutex lock
+  extern mutex_lock_t **mutex_list;
+  int i = 0;
+  while (mutex_list[i]) i++;
+  mutex_list[i] = lock;
 }
 
 void do_mutex_lock_acquire(mutex_lock_t *lock)

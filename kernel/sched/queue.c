@@ -35,6 +35,7 @@ void queue_push(queue_t *queue, void *item)
         _item->prev = queue->tail;
         queue->tail = item;
     }
+    ((pcb_t*)item)->queue = queue;
 }
 
 void *queue_dequeue(queue_t *queue)
@@ -54,6 +55,7 @@ void *queue_dequeue(queue_t *queue)
 
     temp->prev = NULL;
     temp->next = NULL;
+    ((pcb_t*)temp)->queue = NULL;
 
     return (void *)temp;
 }
@@ -87,6 +89,7 @@ void *queue_remove(queue_t *queue, void *item)
 
     _item->prev = NULL;
     _item->next = NULL;
+    ((pcb_t*)item)->queue = NULL;
 
     return (void *)next;
 }

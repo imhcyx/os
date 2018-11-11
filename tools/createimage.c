@@ -81,7 +81,7 @@ void write_kernel(FILE *image, FILE *knfile, Elf32_Phdr *Phdr, int kernelsz)
 
 void record_kernel_sectors(FILE *image, uint8_t kernelsz)
 {
-  uint16_t ksize = kernelsz * SECTOR_SIZE;
+  uint16_t ksize = kernelsz;
   uint16_t sector_magic = 0xaa55;
 
   // seek end of bootblock
