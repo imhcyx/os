@@ -132,16 +132,17 @@ static void backline() {
 
 static void refresh() {
   int i, y;
-  screen_move_cursor(0, SHELL_Y - 1);
-  printf("-------------------- COMMAND --------------------");
+  disable_interrupt();
+  vt100_move_cursor(1, SHELL_Y);
+  printk("-------------------- COMMAND --------------------");
   i = startline;
   y = SHELL_Y;
   do {
-    screen_move_cursor(0, y++);
-    printf(scrbuf[i]);
+    vt100_move_cursor(1, 1+y++);
+    printk(scrbuf[i]);
     i = (i+1) % SHELL_HEIGHT;
   } while (i != startline);
-  sys_reflush();
+  enable_interrupt();
 }
 
 static void putchar(char c) {
@@ -234,33 +235,81 @@ static int myatoi(char *str) {
   return res * sgn;
 }
 
+static uint32_t hex2u(char *str) {
+  uint32_t res = 0;
+  while (*str == ' ') str++;
+  while (1) {
+    if (*str >= '0' && *str <= '9') {
+      res <<= 4;
+      res |= *str++ - '0';
+    }
+    else if (*str >= 'a' && *str <= 'f') {
+      res <<= 4;
+      res |= *str++ - 'a' + 10;
+    }
+    else if (*str >= 'A' && *str <= 'F') {
+      res <<= 4;
+      res |= *str++ - 'A' + 10;
+    }
+    else {
+      break;
+    }
+  }
+  return res;
+}
+
 static void exec_command(char *cmd) {
   int i;
   char token[32];
   cmd = tokenize(cmd, token, sizeof(token));
   if (!strcmp(token, "clear")) {
     scrinit();
+    return;
   }
   else if (!strcmp(token, "ps")) {
     pslist();
+    return;
   }
   else if (!strcmp(token, "kill")) {
     cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
     sys_kill(myatoi(token));
+    return;
   }
   else if (!strcmp(token, "exec")) {
     cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
     i = myatoi(token);
     if (i>=0&&i<num_test_tasks) {
       sys_spawn(test_tasks[i]);
       shell_printf("task %s created\n", test_tasks[i]->name);
     }
+    return;
+  }
+  else if (!strcmp(token, "sr")) {
+    uint32_t val;
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("sr: 0x%08x\n", get_cp0_status());
+      return;
+    }
+    val = hex2u(token);
+    shell_printf("set sr to 0x%08x\n", val);
+    set_cp0_status(val);
+    return;
   }
   else if (!strcmp(token, "")) {
-    // do nothing
+    return;
   }
   else {
     shell_printf("unrecognized command %s\n", token);
+    return;
   }
 }
 

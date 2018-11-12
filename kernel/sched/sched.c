@@ -132,16 +132,19 @@ void scheduler(void)
   // print priorities for debugging
   {
     int i;
-    const char status[5] = {'I', 'B', 'R', 'Y', 'E'};
+    const char status[] = {' ', 'I', 'B', 'R', 'Y', 'E'};
     vt100_move_cursor(1, 11);
-    for (i=0; i<pcbcount; i++)
-      printk("%d    ", pcb[i].priority);
+    for (i=0; i<NUM_MAX_TASK; i++)
+      if (pcb[i].status != TASK_UNUSED)
+        printk("%d    ", pcb[i].priority);
     vt100_move_cursor(1, 12);
-    for (i=0; i<pcbcount; i++)
-      printk("%d    ", pcb[i].dynamic_priority);
+    for (i=0; i<NUM_MAX_TASK; i++)
+      if (pcb[i].status != TASK_UNUSED)
+        printk("%d    ", pcb[i].dynamic_priority);
     vt100_move_cursor(1, 13);
-    for (i=0; i<pcbcount; i++)
-      printk("%c    ", status[pcb[i].status]);
+    for (i=0; i<NUM_MAX_TASK; i++)
+      if (pcb[i].status != TASK_UNUSED)
+        printk("%c    ", status[pcb[i].status]);
   }
 #endif
   // restore screen cursor

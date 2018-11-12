@@ -3,7 +3,8 @@
 
 void do_semaphore_init(semaphore_t *s, int val)
 {
-
+  s->val = val;
+  queue_init(&s->queue);
 }
 
 void do_semaphore_up(semaphore_t *s)
