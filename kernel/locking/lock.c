@@ -8,12 +8,14 @@ uint32_t atomic_xchg(uint32_t *mem, uint32_t newvalue) {
     ".set noreorder\n"
     "retry:\n"
     "ll %0, %2\n"
-    "sc %1, %2\n"
-    "beqz %1, retry\n"
+    "move $t0, %1\n"
+    "sc $t0, %2\n"
+    "beqz $t0, retry\n"
     "nop\n"
     ".set reorder\n"
     : "=&r" (oldvalue)
     : "r" (newvalue), "m" (*mem)
+    : "t0"
   );
   return oldvalue;
 }

@@ -76,14 +76,17 @@ static int _mutex_lock_release(int arg1, int arg2, int arg3) {
 }
 
 static int _semaphore_init(int arg1, int arg2, int arg3) {
+  do_semaphore_init((semaphore_t*)arg1, arg2);
   return 0;
 }
 
 static int _semaphore_up(int arg1, int arg2, int arg3) {
+  do_semaphore_up((semaphore_t*)arg1);
   return 0;
 }
 
 static int _semaphore_down(int arg1, int arg2, int arg3) {
+  do_semaphore_down((semaphore_t*)arg1);
   return 0;
 }
 
@@ -207,12 +210,15 @@ void mutex_lock_release(mutex_lock_t *lock)
 }
 
 void semaphore_init(semaphore_t *sem, int init) {
+  invoke_syscall(syscall_semaphore_init, (int)sem, init, IGNORE);
 }
 
 void semaphore_up(semaphore_t *sem) {
+  invoke_syscall(syscall_semaphore_up, (int)sem, IGNORE, IGNORE);
 }
 
 void semaphore_down(semaphore_t *sem) {
+  invoke_syscall(syscall_semaphore_down, (int)sem, IGNORE, IGNORE);
 }
 
 void condition_init(condition_t *condition) {

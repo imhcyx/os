@@ -293,6 +293,7 @@ static void exec_command(char *cmd) {
     return;
   }
   else if (!strcmp(token, "sr")) {
+    // for debug only
     uint32_t val;
     cmd = tokenize(cmd, token, sizeof(token));
     if (!strcmp(token, "")) {
