@@ -10,10 +10,6 @@ pcb_t pcb[NUM_MAX_TASK];
 queue_t ready_queue;
 queue_t sleep_queue;
 
-// list of initialized locks
-// TODO: fix this workaround
-mutex_lock_t *mutex_list[16];
-
 /* current running task PCB */
 pcb_t *current_running = NULL;
 
@@ -196,11 +192,12 @@ pcb_t *spawn(struct task_info *task)
 }
 
 void kill(pcb_t *proc) {
-  // TODO: synchronize
-  proc->spfunc = sp_exit;
-  if (proc->status != TASK_RUNNING && proc->status != TASK_READY) {
-    queue_remove(proc->queue, proc);
-    queue_push(&ready_queue, proc);
+  if (proc->status != TASK_UNUSED && proc->status != TASK_EXITED) {
+    proc->spfunc = sp_exit;
+    if (proc->status != TASK_RUNNING && proc->status != TASK_READY) {
+      queue_remove(proc->queue, proc);
+      queue_push(&ready_queue, proc);
+    }
   }
 }
 
@@ -220,9 +217,16 @@ void exit() {
 
 void wait(pcb_t *proc) {
   // NOTE: must be called in interrupt context
-  current_running->sparg = proc;
-  current_running->spfunc = sp_postwait;
-  do_block(&proc->waitqueue);
+  if (proc->status != TASK_UNUSED) {
+    if (proc->status == TASK_EXITED) {
+      sp_postwait(proc);
+    }
+    else {
+      current_running->sparg = proc;
+      current_running->spfunc = sp_postwait;
+      do_block(&proc->waitqueue);
+    }
+  }
 }
 
 void do_sleep(uint32_t sleep_time)

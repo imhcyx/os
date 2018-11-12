@@ -77,5 +77,6 @@ retry:
 
 void other_exception_handler()
 {
+  // TODO: remove SAVE & RESTORE in entry.S for handlable exceptions
   panic("unhandled exception");
 }

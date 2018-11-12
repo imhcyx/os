@@ -15,6 +15,8 @@ void ready_to_exit_task()
 {
     int i = 0, print_location = 0;
 
+    mutex_lock_init(&lock1);
+    mutex_lock_init(&lock2);
     mutex_lock_acquire(&lock1);
     mutex_lock_acquire(&lock2);
 

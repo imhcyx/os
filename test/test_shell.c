@@ -235,6 +235,7 @@ static int myatoi(char *str) {
 }
 
 static void exec_command(char *cmd) {
+  int i;
   char token[32];
   cmd = tokenize(cmd, token, sizeof(token));
   if (!strcmp(token, "clear")) {
@@ -246,6 +247,14 @@ static void exec_command(char *cmd) {
   else if (!strcmp(token, "kill")) {
     cmd = tokenize(cmd, token, sizeof(token));
     sys_kill(myatoi(token));
+  }
+  else if (!strcmp(token, "exec")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    i = myatoi(token);
+    if (i>=0&&i<num_test_tasks) {
+      sys_spawn(test_tasks[i]);
+      shell_printf("task %s created\n", test_tasks[i]->name);
+    }
   }
   else if (!strcmp(token, "")) {
     // do nothing
@@ -277,7 +286,8 @@ void test_shell()
         buf[len] = '\0';
         break;
       }
-      else if (ch == '\x7f') {
+      else if (ch == '\x7f' || ch == '\b') {
+        // \x7f and \b are backspace chars for qemu and minicom respectively
         if (len > 0) {
           len--;
           delchar();

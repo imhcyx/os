@@ -48,6 +48,10 @@ typedef struct mutex_lock
   pcb_t *owner;
 } mutex_lock_t;
 
+// list of initialized locks
+// TODO: fix this workaround
+mutex_lock_t *mutex_list[16];
+
 /* init lock */
 void spin_lock_init(spin_lock_t *lock);
 void spin_lock_acquire(spin_lock_t *lock);

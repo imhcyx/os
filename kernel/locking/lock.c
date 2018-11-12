@@ -42,7 +42,6 @@ void do_mutex_lock_init(mutex_lock_t *lock)
   lock->owner = NULL;
   queue_init(&lock->queue);
   // register mutex lock
-  extern mutex_lock_t **mutex_list;
   int i = 0;
   while (mutex_list[i]) i++;
   mutex_list[i] = lock;

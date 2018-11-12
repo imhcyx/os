@@ -96,7 +96,7 @@ void __attribute__((section(".entry_function"))) _start(void)
 
 	// init screen (QAQ)
 	init_screen();
-	printk("> [INIT] SCREEN initialization succeeded.\n");
+	//printk("> [INIT] SCREEN initialization succeeded.\n");
 
 	// enable interrupt and set BEV=0
   __asm__ volatile (
@@ -109,7 +109,7 @@ void __attribute__((section(".entry_function"))) _start(void)
 	
 	while (1)
 	{
-    struct task_info shell = {"shell", (uint32_t)&test_shell, USER_PROCESS};
+    struct task_info shell = {"shell", (uint32_t)&test_shell, USER_PROCESS, 10};
     pcb_t *proc = spawn(&shell);
     // wait must be called in interrupt context
     sys_waitpid(proc->pid);
