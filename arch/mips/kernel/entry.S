@@ -172,6 +172,7 @@ exception_handler_is_syscall:
     b       exception_handler_exit
 
 exception_handler_exit:
+    jal     before_eret
     RESTORE_CONTEXT(KERNEL)
     STI
     move    k0, zero

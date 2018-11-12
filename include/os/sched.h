@@ -93,8 +93,11 @@ typedef struct pcb
     /* BLOCK | READY | RUNNING */
     task_status_t status;
 
-    /* killed flah */
-    int killed;
+    /* special function call before eret */
+    // TODO: use a list
+
+    void (*spfunc)(void*);
+    void *sparg;
 
     /* queue the task is in */
     queue_t *queue;

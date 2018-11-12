@@ -115,12 +115,6 @@ static void flushline(int line) {
   scrbuf[line][SCREEN_WIDTH] = '\0';
 }
 
-static void scrinit() {
-  int i;
-  for (i=0; i<SHELL_HEIGHT; i++)
-    flushline(i);
-}
-
 static void breakline() {
   int i;
   curline = (curline + 1) % SHELL_HEIGHT;
@@ -140,13 +134,13 @@ static void refresh() {
   int i, y;
   screen_move_cursor(0, SHELL_Y - 1);
   printf("-------------------- COMMAND --------------------");
-  i = startline-1;
+  i = startline;
   y = SHELL_Y;
   do {
-    i = (i+1) % SHELL_HEIGHT;
     screen_move_cursor(0, y++);
     printf(scrbuf[i]);
-  } while (i != curline);
+    i = (i+1) % SHELL_HEIGHT;
+  } while (i != startline);
   sys_reflush();
 }
 
@@ -192,6 +186,75 @@ static int shell_printf(const char *fmt, ...) {
   return ret;
 }
 
+static void scrinit() {
+  int i;
+  for (i=0; i<SHELL_HEIGHT; i++)
+    flushline(i);
+  curline = 0;
+  startline = 0;
+  cursor = 0;
+  refresh();
+}
+
+static void pslist() {
+  char desc[] = {' ','I','B','R','R','E'};
+  int i;
+  for (i=0; i<NUM_MAX_TASK; i++) {
+    if (pcb[i].status != TASK_UNUSED) {
+      shell_printf("%c %d %s\n", desc[pcb[i].status], pcb[i].pid, pcb[i].name);
+    }
+  }
+}
+
+static char *tokenize(char *str, char *token, int size) {
+  int i;
+  i = 0;
+  while (*str == ' ') str++;
+  while (*str != '\0' && *str != ' ' && i<size-1) {
+    token[i++] = *str++;
+  }
+  token[i] = '\0';
+  return str;
+}
+
+// ignore overflow
+static int myatoi(char *str) {
+  int res = 0;
+  int sgn = 1;
+  while (*str == ' ') str++;
+  if (*str == '+') str++;
+  else if (*str == '-') {
+    str++;
+    sgn = -1;
+  }
+  while (*str >= '0' && *str <= '9') {
+    res *= 10;
+    res += *str++ - '0';
+  }
+  return res * sgn;
+}
+
+static void exec_command(char *cmd) {
+  char token[32];
+  cmd = tokenize(cmd, token, sizeof(token));
+  if (!strcmp(token, "clear")) {
+    scrinit();
+  }
+  else if (!strcmp(token, "ps")) {
+    pslist();
+  }
+  else if (!strcmp(token, "kill")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    sys_kill(myatoi(token));
+  }
+  else if (!strcmp(token, "")) {
+    // do nothing
+  }
+  else {
+    shell_printf("unrecognized command %s\n", token);
+  }
+}
+
 void test_shell()
 {
   char ch;
@@ -227,7 +290,7 @@ void test_shell()
         }
       }
     }
-    shell_printf("Input: %s\n", buf);
+    exec_command(buf);
 #if 0
     // debug
     {

@@ -12,13 +12,13 @@ queue_t sleep_queue;
 
 // list of initialized locks
 // TODO: fix this workaround
-mutex_lock_t *mutex_list[256];
+mutex_lock_t *mutex_list[16];
 
 /* current running task PCB */
 pcb_t *current_running = NULL;
 
 /* global process id */
-pid_t process_id = 1;
+pid_t process_id = 0;
 
 #define STACK_ALLOC_TOP 0xa0f00000
 #define STACK_ALLOC_SIZE 0x1000
@@ -49,7 +49,7 @@ static pcb_t *pcb_alloc(task_type_t type)
   proc->pid = process_id++;
   proc->type = type;
   proc->status = TASK_INIT;
-  proc->killed = 0;
+  proc->spfunc = NULL;
   proc->queue = NULL;
 
   proc->prev = NULL;
@@ -69,7 +69,7 @@ static void task_init()
 {
   ((void(*)())current_running->entrypoint)();
   // the task should be killed here
-  for(;;) exit();
+  for(;;) sys_exit();
 }
 
 void sched_init()
@@ -87,6 +87,9 @@ void sched_init()
     printk("failed to alloc pcb\n");
     for(;;);
   }
+  strcpy(&proc->name, "kernel");
+  proc->priority = 0;
+  proc->dynamic_priority = 0;
   proc->status = TASK_RUNNING;
   current_running = proc;
 }
@@ -112,6 +115,10 @@ void scheduler(void)
       x->wakeuptime = 0;
       queue_push(&ready_queue, x);
     }
+  }
+  // panic if no ready tasks (at least we should have the idle(0) task)
+  if (queue_is_empty(&ready_queue)) {
+    panic("no schedulable task");
   }
   // find the first task with the highest priority
   queue_iterate (&ready_queue, x) {
@@ -144,6 +151,15 @@ void scheduler(void)
   // restore screen cursor
   screen_cursor_x = current_running->cursor_x;
   screen_cursor_y = current_running->cursor_y;
+}
+
+static void sp_exit(void *sparg) {
+  exit();
+}
+
+static void sp_postwait(void *sparg) {
+  pcb_t *proc = sparg;
+  pcb_free(proc);
 }
 
 pcb_t *spawn(struct task_info *task)
@@ -180,11 +196,11 @@ pcb_t *spawn(struct task_info *task)
 }
 
 void kill(pcb_t *proc) {
-  if (atomic_xchg(&proc->killed, 1) == 0) {
-    if (proc->status != TASK_RUNNING && proc->status != TASK_READY) {
+  // TODO: synchronize
+  proc->spfunc = sp_exit;
+  if (proc->status != TASK_RUNNING && proc->status != TASK_READY) {
     queue_remove(proc->queue, proc);
     queue_push(&ready_queue, proc);
-    }
   }
 }
 
@@ -193,19 +209,19 @@ void exit() {
   // NOTE: must be called in interrupt context
   current_running->status = TASK_EXITED;
   // release mutex locks
-  for (i=0; i<256; i++)
+  for (i=0; i<16; i++)
     if (mutex_list[i] && mutex_list[i]->owner == current_running)
       do_mutex_lock_release(mutex_list[i]);
   // TODO: release other resources
   // wake up waiting processes
   do_unblock_all(&current_running->waitqueue);
-  // after waking up waiting processes, clean up by self
-  pcb_free(current_running);
   scheduler();
 }
 
 void wait(pcb_t *proc) {
   // NOTE: must be called in interrupt context
+  current_running->sparg = proc;
+  current_running->spfunc = sp_postwait;
   do_block(&proc->waitqueue);
 }
 
