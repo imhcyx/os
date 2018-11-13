@@ -111,10 +111,12 @@ static int _condition_broadcast(int arg1, int arg2, int arg3) {
 }
 
 static int _barrier_init(int arg1, int arg2, int arg3) {
+  do_barrier_init((barrier_t*)arg1, arg2);
   return 0;
 }
 
 static int _barrier_wait(int arg1, int arg2, int arg3) {
+  do_barrier_wait((barrier_t*)arg1);
   return 0;
 }
 
@@ -244,7 +246,9 @@ void condition_broadcast(condition_t *condition) {
 }
 
 void barrier_init(barrier_t *bar, int num) {
+  invoke_syscall(syscall_barrier_init, (int)bar, num, IGNORE);
 }
 
 void barrier_wait(barrier_t *bar) {
+  invoke_syscall(syscall_barrier_wait, (int)bar, IGNORE, IGNORE);
 }
