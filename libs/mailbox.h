@@ -1,9 +1,22 @@
 #ifndef INCLUDE_MAIL_BOX_
 #define INCLUDE_MAIL_BOX_
 
+#include "lock.h"
+#include "cond.h"
+
+#define MAILBOX_BUFLEN 512
+
 typedef struct mailbox
 {
-
+  char name[32];
+  int refcount;
+  int init;
+  mutex_lock_t lock;
+  condition_t cond;
+  int sendptr;
+  int recvptr;
+  int full;
+  char buffer[MAILBOX_BUFLEN];
 } mailbox_t;
 
 

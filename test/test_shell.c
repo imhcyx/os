@@ -305,6 +305,7 @@ static void exec_command(char *cmd) {
     }
     return;
   }
+#if 0
   else if (!strcmp(token, "sr")) {
     // for debug only
     uint32_t val;
@@ -318,6 +319,7 @@ static void exec_command(char *cmd) {
     set_cp0_status(val);
     return;
   }
+#endif
   else if (!strcmp(token, "")) {
     return;
   }
