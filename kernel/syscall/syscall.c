@@ -141,15 +141,17 @@ void init_syscall_table() {
 
 int system_call_helper()
 {
+  pcb_t *proc = current_running;
   int fn, arg1, arg2, arg3;
-  fn = current_running->context.regs[4];
-  arg1 = current_running->context.regs[5];
-  arg2 = current_running->context.regs[6];
-  arg3 = current_running->context.regs[7];
+  fn = proc->context.regs[4];
+  arg1 = proc->context.regs[5];
+  arg2 = proc->context.regs[6];
+  arg3 = proc->context.regs[7];
   if (syscall[fn]) {
     uint32_t ret;
     ret = syscall[fn](arg1, arg2, arg3);
-    current_running->context.regs[2] = ret;
+    // DO NOT use current_running since the task may be switched
+    proc->context.regs[2] = ret;
   }
 }
 
