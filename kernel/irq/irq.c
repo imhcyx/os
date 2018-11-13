@@ -12,13 +12,13 @@ void panic(char *desc) {
   epc = current_running->context.cp0_epc;
   badvaddr = current_running->context.cp0_badvaddr;
   printk("\n");
-  printk(" *** PANIC ***\n");
-  printk(" %s\n", desc);
-  printk(" pid=%d\n", current_running->pid);
-  printk(" status=0x%08x cause=0x%08x epc=0x%08x badvaddr=0x%08x\n", status, cause, epc, badvaddr);
-  printk(" registers:\n");
+  printk(" *** PANIC *** \n");
+  printk(" %s \n", desc);
+  printk(" pid=%d \n", current_running->pid);
+  printk(" status=0x%08x cause=0x%08x epc=0x%08x badvaddr=0x%08x \n", status, cause, epc, badvaddr);
+  printk(" registers: \n");
   for (i=0; i<32; i+=4)
-    printk(" %02d: 0x%08x %02d: 0x%08x %02d: 0x%08x %02d: 0x%08x\n",
+    printk(" %02d: 0x%08x %02d: 0x%08x %02d: 0x%08x %02d: 0x%08x \n",
         i, current_running->context.regs[i],
         i+1, current_running->context.regs[i+1],
         i+2, current_running->context.regs[i+2],

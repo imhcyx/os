@@ -207,6 +207,15 @@ static void pslist() {
   }
 }
 
+static void psclean() {
+  int i;
+  for (i=0; i<NUM_MAX_TASK; i++) {
+    if (pcb[i].status == TASK_EXITED) {
+      sys_waitpid(pcb[i].pid);
+    }
+  }
+}
+
 static char *tokenize(char *str, char *token, int size) {
   int i;
   i = 0;
@@ -267,6 +276,10 @@ static void exec_command(char *cmd) {
     return;
   }
   else if (!strcmp(token, "ps")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "clean")) {
+      psclean();
+    }
     pslist();
     return;
   }

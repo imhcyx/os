@@ -5,6 +5,7 @@
 #include "test3.h"
 #include "syscall.h"
 
+static int init = 0;
 static mutex_lock_t mutex;
 static condition_t condition;
 static int num_staff = 0;
@@ -15,6 +16,12 @@ void producer_task(void)
     int print_location = 0;
     int production = 3;
     int sum_production = 0;
+
+    if (!init) {
+      mutex_lock_init(&mutex);
+      condition_init(&condition);
+      init = 1;
+    }
 
     for (i = 0; i < 50; i++)
     {
@@ -43,6 +50,12 @@ void consumer_task1(void)
     int consumption = 1;
     int sum_consumption = 0;
 
+    if (!init) {
+      mutex_lock_init(&mutex);
+      condition_init(&condition);
+      init = 1;
+    }
+
     while (1)
     {
         mutex_lock_acquire(&mutex);
@@ -67,6 +80,12 @@ void consumer_task2(void)
     int print_location = 2;
     int consumption = 1;
     int sum_consumption = 0;
+
+    if (!init) {
+      mutex_lock_init(&mutex);
+      condition_init(&condition);
+      init = 1;
+    }
 
     while (1)
     {

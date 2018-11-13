@@ -4,6 +4,7 @@
 #include "stdio.h"
 #include "syscall.h"
 
+static int init = 0;
 static semaphore_t semaphore;
 static int global_count = 0;
 
@@ -13,7 +14,10 @@ void semaphore_add_task1(void)
     int print_location = 0;
     // int sum_up = 0;
 
-    semaphore_init(&semaphore, 1);
+    if (!init) {
+      semaphore_init(&semaphore, 1);
+      init = 1;
+    }
 
     for (i = 0; i < 10; i++)
     {
@@ -37,6 +41,11 @@ void semaphore_add_task2(void)
     int print_location = 1;
     // int sum_down = 0;
 
+    if (!init) {
+      semaphore_init(&semaphore, 1);
+      init = 1;
+    }
+
     for (i = 0; i < 20; i++)
     {
         semaphore_down(&semaphore); // semaphore.value--
@@ -58,6 +67,11 @@ void semaphore_add_task3(void)
     int i;
     int print_location = 2;
     // int sum_down = 0;
+
+    if (!init) {
+      semaphore_init(&semaphore, 1);
+      init = 1;
+    }
 
     for (i = 0; i < 30; i++)
     {

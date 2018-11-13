@@ -91,18 +91,22 @@ static int _semaphore_down(int arg1, int arg2, int arg3) {
 }
 
 static int _condition_init(int arg1, int arg2, int arg3) {
+  do_condition_init((condition_t*)arg1);
   return 0;
 }
 
 static int _condition_wait(int arg1, int arg2, int arg3) {
+  do_condition_wait((mutex_lock_t*)arg1, (condition_t*)arg2);
   return 0;
 }
 
 static int _condition_signal(int arg1, int arg2, int arg3) {
+  do_condition_signal((condition_t*)arg1);
   return 0;
 }
 
 static int _condition_broadcast(int arg1, int arg2, int arg3) {
+  do_condition_broadcast((condition_t*)arg1);
   return 0;
 }
 
@@ -224,15 +228,19 @@ void semaphore_down(semaphore_t *sem) {
 }
 
 void condition_init(condition_t *condition) {
+  invoke_syscall(syscall_condition_init, (int)condition, IGNORE, IGNORE);
 }
 
 void condition_wait(mutex_lock_t *lock, condition_t *condition) {
+  invoke_syscall(syscall_condition_wait, (int)lock, (int)condition, IGNORE);
 }
 
 void condition_signal(condition_t *condition) {
+  invoke_syscall(syscall_condition_signal, (int)condition, IGNORE, IGNORE);
 }
 
 void condition_broadcast(condition_t *condition) {
+  invoke_syscall(syscall_condition_broadcast, (int)condition, IGNORE, IGNORE);
 }
 
 void barrier_init(barrier_t *bar, int num) {

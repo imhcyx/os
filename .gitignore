@@ -1,3 +1,3 @@
 .*
 !.gitignore
-./kernel.txt
+kernel.txt
