@@ -34,6 +34,8 @@
 
 #define MHZ 300
 
+#define MAX_TIME (((unsigned int)0xffffffff)/MHZ)
+
 extern uint32_t time_elapsed;
 
 uint32_t get_timer(void);

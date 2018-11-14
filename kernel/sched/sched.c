@@ -236,7 +236,7 @@ void do_sleep(uint32_t sleep_time)
 {
   // NOTE: must be called in interrupt context
   current_running->status = TASK_BLOCKED;
-  current_running->wakeuptime = get_timer() + sleep_time * 10000; // ?
+  current_running->wakeuptime = (get_timer() + sleep_time * 10000) % MAX_TIME; // ?
   queue_push(&sleep_queue, current_running);
   scheduler();
 }

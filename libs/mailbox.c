@@ -63,6 +63,7 @@ void mbox_send(mailbox_t *mailbox, void *msg, int msg_length)
     mailbox->sendptr = i;
     mailbox->full = avail == 0;
     if (msg_length > 0) {
+      condition_signal(&mailbox->cond);
       condition_wait(&mailbox->lock, &mailbox->cond);
     }
   }
@@ -89,6 +90,7 @@ void mbox_recv(mailbox_t *mailbox, void *msg, int msg_length)
     mailbox->recvptr = i;
     mailbox->full = avail == MAILBOX_BUFLEN;
     if (msg_length > 0) {
+      condition_signal(&mailbox->cond);
       condition_wait(&mailbox->lock, &mailbox->cond);
     }
   }
