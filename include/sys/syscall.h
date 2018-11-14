@@ -47,6 +47,7 @@ enum {
   syscall_write,
   syscall_cursor,
   syscall_reflush,
+  syscall_clear,
 
   syscall_mutex_lock_init,
   syscall_mutex_lock_acquire,

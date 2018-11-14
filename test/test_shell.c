@@ -272,6 +272,10 @@ static void exec_command(char *cmd) {
   char token[32];
   cmd = tokenize(cmd, token, sizeof(token));
   if (!strcmp(token, "clear")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "all")) {
+      sys_clear();
+    }
     scrinit();
     return;
   }

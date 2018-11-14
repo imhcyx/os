@@ -39,7 +39,7 @@ void vt100_move_cursor(int, int);
 void init_screen(void);
 
 /* clear screen */
-void screen_clear(int, int);
+void screen_clear();
 
 /* reflush screen buffer */
 void screen_reflush(void);

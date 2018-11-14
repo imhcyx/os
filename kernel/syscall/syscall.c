@@ -60,6 +60,11 @@ static int _reflush(int arg1, int arg2, int arg3) {
   return 0;
 }
 
+static int _clear(int arg1, int arg2, int arg3) {
+  screen_clear();
+  return 0;
+}
+
 static int _mutex_lock_init(int arg1, int arg2, int arg3) {
   do_mutex_lock_init((mutex_lock_t*)arg1);
   return 0;
@@ -131,6 +136,7 @@ void init_syscall_table() {
   def_syscall(write);
   def_syscall(cursor);
   def_syscall(reflush);
+  def_syscall(clear);
   def_syscall(mutex_lock_init);
   def_syscall(mutex_lock_acquire);
   def_syscall(mutex_lock_release);
@@ -195,6 +201,11 @@ void sys_write(char *buff)
 void sys_reflush()
 {
   invoke_syscall(syscall_reflush, IGNORE, IGNORE, IGNORE);
+}
+
+void sys_clear()
+{
+  invoke_syscall(syscall_clear, IGNORE, IGNORE, IGNORE);
 }
 
 void sys_move_cursor(int x, int y)

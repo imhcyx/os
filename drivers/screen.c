@@ -117,8 +117,7 @@ void init_screen(void)
     screen_clear(0, SCREEN_HEIGHT - 1);
 }
 
-// clear line1 to line2
-void screen_clear(int line1, int line2)
+void screen_clear()
 {
     int i, j;
 
