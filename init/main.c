@@ -32,6 +32,14 @@
 #include "common.h"
 #include "syscall.h"
 
+static void init_memory()
+{
+	init_page_table(); 
+	//In task1&2, page table is initialized completely with address mapping, but only virtual pages in task3.
+	init_TLB();		//only used in P4 task1
+	init_swap();		//only used in P4 bonus: Page swap mechanism
+}
+
 static void init_pcb() {
   sched_init();
 }
@@ -85,6 +93,10 @@ void __attribute__((section(".entry_function"))) _start(void)
 	// init interrupt (^_^)
 	init_exception();
 	printk("> [INIT] Interrupt processing initialization succeeded.\n");
+
+	// init virtual memory
+	init_memory();
+	printk("> [INIT] Virtual memory initialization succeeded.\n");
 
 	// init system call table (0_0)
 	init_syscall();
