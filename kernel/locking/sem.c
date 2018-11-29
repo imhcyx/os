@@ -5,11 +5,11 @@ int atomic_add(int *mem, int val) {
   int oldvalue;
   __asm__ volatile (
     ".set noreorder\n"
-    "retry:\n"
+    "0:\n"
     "ll %0, %2\n"
     "addu $t0, %0, %1\n"
     "sc $t0, %2\n"
-    "beqz $t0, retry\n"
+    "beqz $t0, 0b\n"
     "nop\n"
     ".set reorder\n"
     : "=&r" (oldvalue)

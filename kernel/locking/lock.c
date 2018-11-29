@@ -6,11 +6,11 @@ uint32_t atomic_xchg(uint32_t *mem, uint32_t newvalue) {
   uint32_t oldvalue;
   __asm__ volatile (
     ".set noreorder\n"
-    "retry:\n"
+    "0:\n"
     "ll %0, %2\n"
     "move $t0, %1\n"
     "sc $t0, %2\n"
-    "beqz $t0, retry\n"
+    "beqz $t0, 0b\n"
     "nop\n"
     ".set reorder\n"
     : "=&r" (oldvalue)

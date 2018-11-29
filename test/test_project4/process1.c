@@ -18,6 +18,7 @@ void drawing_task1(void)
     {
         for (i = 60; i > 0; i--)
         {
+            disable_interrupt();
             /* move */
             vt100_move_cursor(i, j + 0);
             printk("%s", plane1);
@@ -30,8 +31,10 @@ void drawing_task1(void)
 
             vt100_move_cursor(i, j + 3);
             printk("%s", plane4);
+            enable_interrupt();
         }
 
+        disable_interrupt();
         vt100_move_cursor(1, j + 0);
         printk("%s", blank);
 
@@ -43,5 +46,6 @@ void drawing_task1(void)
 
         vt100_move_cursor(1, j + 3);
         printk("%s", blank);
+        enable_interrupt();
     }
 }

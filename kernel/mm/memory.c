@@ -1,3 +1,37 @@
 #include "mm.h"
 
-//TODO:Finish memory management functions here refer to mm.h and add any functions you need.
+void init_page_table() {
+}
+
+static inline void fill_tlb_simple
+(
+ uint32_t vpn2,
+ uint32_t pfn0,
+ uint32_t pfn1,
+ uint32_t index
+)
+{
+  __asm__ volatile (
+    "mtc0 $zero, $5\n" // set PageMask
+    "mtc0 %0, $10\n"  // set EntryHi
+    "mtc0 %1, $2\n"   // set EntryLo0
+    "mtc0 %2, $3\n"   // set EntryLo1
+    "mtc0 %3, $0\n"   // set Index
+    "tlbwi\n"
+    ::
+    "r" (vpn2 << 13),
+    "r" (pfn0 << 6 | 0x17), // C=2, D=1, V=1, G=1
+    "r" (pfn1 << 6 | 0x17), // C=2, D=1, V=1, G=1
+    "r" (index)
+  );
+}
+
+void init_TLB() {
+  // map VA 0x00000000~0x00020000 to PA 0x1000000~0x1020000
+  uint32_t index;
+  for (index = 0; index < 32; index++)
+    fill_tlb_simple(index, 0x1000 + index*2, 0x1001 + index*2, index);
+}
+
+void init_swap() {
+}

@@ -8,4 +8,8 @@
 void do_TLB_Refill();
 void do_page_fault();
 
+void init_page_table();
+void init_TLB();
+void init_swap();
+
 #endif

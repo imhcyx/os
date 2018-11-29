@@ -31,7 +31,7 @@
 #include "syscall.h"
 #include "stdarg.h"
 
-static inline uint32_t get_cp0_status() {
+uint32_t get_cp0_status() {
   uint32_t status;
   __asm__ volatile (
     "mfc0 %0, $12\n"
@@ -40,28 +40,28 @@ static inline uint32_t get_cp0_status() {
   return status;
 }
 
-static inline void set_cp0_status(uint32_t status) {
+void set_cp0_status(uint32_t status) {
   __asm volatile (
     "mtc0 %0, $12\n"
     :: "r" (status)
   );
 }
 
-static void disable_interrupt()
+void disable_interrupt()
 {
     uint32_t cp0_status = get_cp0_status();
     cp0_status &= 0xfffffffe;
     set_cp0_status(cp0_status);
 }
 
-static void enable_interrupt()
+void enable_interrupt()
 {
     uint32_t cp0_status = get_cp0_status();
     cp0_status |= 0x01;
     set_cp0_status(cp0_status);
 }
 
-static char read_uart_ch(void)
+char read_uart_ch(void)
 {
     char ch = 0;
     unsigned char *read_port = (unsigned char *)(0xbfe48000 + 0x00);
