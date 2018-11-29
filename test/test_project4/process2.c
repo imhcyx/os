@@ -84,28 +84,47 @@ void rw_task1(void)
 	int curs = 0;
 	int memory[RW_TIMES];
 	int i = 0;
-	for(i = 0; i < RW_TIMES; i++)
-	{
-		screen_move_cursor(0, curs+i);
-		scanf(&mem1);
-		screen_move_cursor(0, curs+i);
-		memory[i] = mem2 = rand();
-		*(int *)mem1 = mem2;
-		printf("Write: 0x%x, %d", mem1, mem2);
-	}
-	curs = RW_TIMES;
-	for(i = 0; i < RW_TIMES; i++)
-	{
-		screen_move_cursor(0, curs+i);
-		scanf(&mem1);
-		screen_move_cursor(0, curs+i);
-		memory[i+RW_TIMES] = *(int *)mem1;
-		if(memory[i+RW_TIMES] == memory[i])
-			printf("Read succeed: %d", memory[i+RW_TIMES]);
-		else
-			printf("Read error: %d", memory[i+RW_TIMES]);
-	}
-	while(1);
+#if 0
+  // debug
+  disable_interrupt();
+  uint32_t index;
+  for (index = 0; index < 64; index++) {
+    uint32_t pagemask, entryhi, entrylo0, entrylo1;
+    tlbr(&pagemask, &entryhi, &entrylo0, &entrylo1, index);
+    printk("index: %08x pagemask: %08x entryhi: %08x entrylo0: %08x entrylo1: %08x\n",
+        index, pagemask, entryhi, entrylo0, entrylo1);
+  }
+  for (i=0;i<64;i++)
+    *((int*)(i<<12)) = i;
+  for (i=0;i<64;i++)
+    printk("%08x: %d\n", i<<12, *((int*)(i<<12)));
+  while (!read_uart_ch());
+  enable_interrupt();
+#endif
+  while (1) {
+    sys_clear();
+    screen_move_cursor(0, 0);
+    for(i = 0; i < RW_TIMES; i++)
+    {
+      printf("Address:");
+      scanf(&mem1);
+      memory[i] = mem2 = rand();
+      *(int *)mem1 = mem2;
+      printf("Write: 0x%x, %d\n", mem1, mem2);
+    }
+    curs = RW_TIMES;
+    for(i = 0; i < RW_TIMES; i++)
+    {
+      printf("Address:");
+      scanf(&mem1);
+      memory[i+RW_TIMES] = *(int *)mem1;
+      if(memory[i+RW_TIMES] == memory[i])
+        printf("Read succeed: %d\n", memory[i+RW_TIMES]);
+      else
+        printf("Read error: %d\n", memory[i+RW_TIMES]);
+    }
+    while (!read_uart_ch());
+  }
 	//Only input address.
 	//Achieving input r/w command is recommended but not required.
 }

@@ -122,11 +122,14 @@ void __attribute__((section(".entry_function"))) _start(void)
 	
 	while (1)
 	{
+    struct task_info shell = {"shell", (uint32_t)&test_shell, USER_PROCESS, 10};
     struct task_info test1 = {"test1", (uint32_t)&drawing_task1, USER_PROCESS, 0};
     struct task_info test2 = {"test2", (uint32_t)&rw_task1, USER_PROCESS, 0};
-    //pcb_t *proc1 = spawn(&test1);
+    //pcb_t *proc = spawn(&shell);
+    pcb_t *proc1 = spawn(&test1);
     pcb_t *proc2 = spawn(&test2);
-    //sys_waitpid(proc1->pid);
+    //sys_waitpid(proc->pid);
+    sys_waitpid(proc1->pid);
     sys_waitpid(proc2->pid);
 	};
 	return;
