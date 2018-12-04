@@ -18,13 +18,22 @@ SRC_TEST	= $(wildcard ./test/*.c ./test/test_project3/*.c ./test/test_project4/*
 
 SRC_IMAGE	= ./tools/createimage.c
 
+DEFMACRO =
+LIBS =
+
+ENABLE_SWAP ?= y
+ifeq ($(ENABLE_SWAP), y)
+DEFMACRO += -DENABLE_SWAP
+LIBS += -lepmon
+endif
+
 bootblock: $(SRC_BOOT)
 	${CC} -G 0 -O2 -fno-pic -mno-abicalls -fno-builtin -nostdinc -mips3 -Ttext=0xffffffffa0800000 -N -o bootblock $(SRC_BOOT) -nostdlib -e main -Wl,-m -Wl,elf32ltsmip -T ld.script
 
 main : $(SRC_ARCH) $(SRC_DRIVER) $(SRC_INIT) $(SRC_INT) $(SRC_LOCK) $(SRC_MM) $(SRC_SCHED) $(SRC_SYSCALL) $(SRC_LIBS) $(SRC_TEST)
 	${CC} -G 0 -O0 -Iinclude -Ilibs -Iarch/mips/include -Idrivers -Iinclude/os -Iinclude/sys -Itest -Itest/test_project2 -Itest/test_project3 -Itest/test_project4 \
-	-fno-pic -mno-abicalls -fno-builtin -nostdinc -mips3 -Ttext=0xffffffffa0800200 -N -o main -g \
-	$(SRC_ARCH) $(SRC_DRIVER) $(SRC_INIT) $(SRC_INT) $(SRC_LOCK) $(SRC_MM) $(SRC_SCHED) $(SRC_SYSCALL) $(SRC_PROC) $(SRC_LIBS) $(SRC_TEST) -nostdlib -Wl,-m -Wl,elf32ltsmip -T ld.script		
+	-fno-pic -mno-abicalls -fno-builtin -nostdinc -mips3 -Ttext=0xffffffffa0800200 -N -o main -g $(DEFMACRO) \
+	$(SRC_ARCH) $(SRC_DRIVER) $(SRC_INIT) $(SRC_INT) $(SRC_LOCK) $(SRC_MM) $(SRC_SCHED) $(SRC_SYSCALL) $(SRC_PROC) $(SRC_LIBS) $(SRC_TEST) -L. $(LIBS) -nostdlib -Wl,-m -Wl,elf32ltsmip -T ld.script		
 
 createimage: $(SRC_IMAGE)
 	gcc $(SRC_IMAGE) -o createimage

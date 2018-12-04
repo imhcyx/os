@@ -5,24 +5,27 @@
 
 #define TLB_ENTRY_NUMBER 32
 
+#define SWAP_FRAME_NUMBER_2 32
 #define PAGE_FRAME_NUMBER_2 16
 
 // VA: 0x00000000~0x7fffffff : 19 bits
 
+#define SWAP_OFFSET_BASE 0x1000000
 // PA
 #define PAGE_FRAME_BASE 0x1000000
 // VA
 #define PTE_ALLOC_BASE 0xa0a00000
 
 struct pte {
+  uint32_t tlbindex;
   union {
     struct {
       unsigned global0:1;
       unsigned valid0:1;
       unsigned dirty0:1;
       unsigned cachable0:3;
-      unsigned pfn0:24;
-      unsigned swaped:1; // masked out before writing to tlb
+      unsigned pfn0:24; // indicates location in swap when swapped out
+      unsigned swapped:1; // masked out before writing to tlb
       unsigned allocated:1; // masked out before writing to tlb
     };
     uint32_t entrylo0;
@@ -59,4 +62,10 @@ void init_swap();
 extern void TLBexception_handler_entry(void);
 extern void TLBexception_handler_begin(void);
 extern void TLBexception_handler_end(void);
+
+#ifdef ENABLE_SWAP
+extern void sdread(void *buf, unsigned int base, int n);
+extern void sdwrite(void *buf, unsigned int base, int n);
+#endif
+
 #endif
