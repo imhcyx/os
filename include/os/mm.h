@@ -6,7 +6,7 @@
 #define TLB_ENTRY_NUMBER 32
 
 #define SWAP_FRAME_NUMBER_2 32
-#define PAGE_FRAME_NUMBER_2 16
+#define PAGE_FRAME_NUMBER_2 2
 
 // VA: 0x00000000~0x7fffffff : 19 bits
 
@@ -14,7 +14,7 @@
 // PA
 #define PAGE_FRAME_BASE 0x1000000
 // VA
-#define PTE_ALLOC_BASE 0xa0a00000
+#define PTE_ALLOC_BASE 0xa0c00000
 
 struct pte {
   uint32_t tlbindex;

@@ -16,6 +16,7 @@ struct pte *pte_alloc_ptr = (struct pte*)PTE_ALLOC_BASE;
 struct pte *alloc_ptelist() {
   struct pte *ret = pte_alloc_ptr;
   pte_alloc_ptr += 512;
+  memset(ret, 0, sizeof(struct pte)*512);
   return ret;
 }
 
@@ -241,9 +242,24 @@ void init_page_table() {
 
 void init_TLB() {
   // map VA 0x00000000~0x00040000 to PA 0x1000000~0x1040000
+  /*
   uint32_t index;
   for (index = 0; index < 32; index++)
     fill_tlb_simple(index, 0x1000 + index*2, 0x1001 + index*2, index);
+  */
+  int i;
+  for (i=0;i<32;i++) {
+    __asm__ volatile (
+      "mtc0 $zero, $5\n" // set PageMask
+      "mtc0 $zero, $10\n"  // set EntryHi
+      "mtc0 $zero, $2\n"   // set EntryLo0
+      "mtc0 $zero, $3\n"   // set EntryLo1
+      "mtc0 %0, $0\n"   // set Index
+      "tlbwi\n"
+      ::
+      "r" (i)
+    );
+  }
 }
 
 void init_swap() {
