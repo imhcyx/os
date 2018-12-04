@@ -31,6 +31,7 @@
 
 #include "type.h"
 #include "queue.h"
+#include "mm.h"
 
 #define NUM_MAX_TASK 16
 
@@ -76,6 +77,7 @@ typedef struct pcb
     regs_context_t context;
     
     uint32_t stack_top;
+    uint32_t kernel_stack_top;
 
     /* queue */
     void *prev;
@@ -118,6 +120,9 @@ typedef struct pcb
     /* cursor position */
     int cursor_x;
     int cursor_y;
+
+    /* page directory */
+    struct pgd pgd;
 
 } pcb_t;
 

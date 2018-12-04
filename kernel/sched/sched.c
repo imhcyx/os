@@ -16,7 +16,7 @@ pcb_t *current_running = NULL;
 /* global process id */
 pid_t process_id = 0;
 
-#define STACK_ALLOC_TOP 0xa0f00000
+#define STACK_ALLOC_TOP 0xa0fff000
 #define STACK_ALLOC_SIZE 0x1000
 uint32_t stack_alloc_ptr = STACK_ALLOC_TOP;
 
@@ -52,6 +52,8 @@ static pcb_t *pcb_alloc(task_type_t type)
   proc->next = NULL;
 
   queue_init(&proc->waitqueue);
+
+  memset(&proc->pgd, 0, sizeof(proc->pgd));
 
   return proc;
 }
@@ -128,6 +130,7 @@ void scheduler(void)
   proc->dynamic_priority = 0;
   current_running = proc;
   current_running->status = TASK_RUNNING;
+  __asm__ volatile ("mtc0 %0, $10\n" :: "r" (current_running->pid));
 #if 0
   // print priorities for debugging
   {
@@ -173,10 +176,13 @@ pcb_t *spawn(struct task_info *task)
 
   // TODO: strncpy
   strcpy(&proc->name, task->name);
-  // alloc kernel stack
-  // currently each stack area is pinned to pcb (TODO:)
-  if (!proc->stack_top)
-    proc->stack_top = alloc_stack();
+  // alloc stack (TODO:)
+  if (!proc->kernel_stack_top)
+    proc->kernel_stack_top = alloc_stack();
+  if (task->type == USER_PROCESS || task->type == USER_THREAD)
+    proc->stack_top = 0x7f000000;
+  else
+    proc->stack_top = proc->kernel_stack_top;
   // set sp
   proc->context.regs[29] = proc->stack_top;
   // set ra

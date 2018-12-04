@@ -2,6 +2,8 @@
 
 .global current_running
 
+.equ    KERNEL_STACK, 0xa1000000
+
 .equ    KERNEL, 0
 .equ    USER,   156
 
@@ -83,6 +85,7 @@ END(asm_start)
     mfc0    k1, CP0_EPC
     sw      k1, 148(k0)
     .set at
+    li      sp, KERNEL_STACK
 .endm
 
 .macro RESTORE_CONTEXT offset
@@ -147,28 +150,50 @@ exception_handler_begin:
 exception_handler_end:
 END(exception_handler_entry)
 
+.global TLBexception_handler_begin
+.global TLBexception_handler_end
+
+NESTED(TLBexception_handler_entry, 0, sp)   
+TLBexception_handler_begin:
+    CLI
+    la      k0, TLBexception_handler
+    jr      k0
+TLBexception_handler_end:
+END(TLBexception_handler_entry)
+
+NESTED(TLBexception_handler, 0, sp)   
+    SAVE_CONTEXT(KERNEL)
+    jal do_TLB_Refill
+    RESTORE_CONTEXT(KERNEL)
+    STI
+    eret
+END(TLBexception_handler)
+
 NESTED(exception_handler, 0, sp)   
 
+    SAVE_CONTEXT(KERNEL)
     mfc0    k0, CP0_CAUSE
     andi    k0, CAUSE_EXCCODE
     beqz    k0, exception_handler_is_int
     li      k1, 8<<2
     beq     k0, k1, exception_handler_is_syscall
-    SAVE_CONTEXT(KERNEL)
+    li      k1, 2<<2
+    beq     k0, k1, exception_handler_is_pagefault
+    li      k1, 3<<2
+    beq     k0, k1, exception_handler_is_pagefault
     jal     other_exception_handler
     b       exception_handler_exit
 
 exception_handler_is_int:
-    SAVE_CONTEXT(KERNEL)
     jal     interrupt_helper
     b       exception_handler_exit
 
 exception_handler_is_syscall:
-    mfc0    k0, CP0_EPC
-    addiu   k0, 4
-    mtc0    k0, CP0_EPC
-    SAVE_CONTEXT(KERNEL)
     jal     system_call_helper
+    b       exception_handler_exit
+
+exception_handler_is_pagefault:
+    jal     do_page_fault
     b       exception_handler_exit
 
 exception_handler_exit:

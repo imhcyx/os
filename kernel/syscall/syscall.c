@@ -164,6 +164,7 @@ int system_call_helper()
     ret = syscall[fn](arg1, arg2, arg3);
     // DO NOT use current_running since the task may be switched
     proc->context.regs[2] = ret;
+    proc->context.cp0_epc += 4;
   }
 }
 
