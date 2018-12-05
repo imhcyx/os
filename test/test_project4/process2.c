@@ -82,25 +82,8 @@ void rw_task1(void)
 {
 	int mem1, mem2 = 0;
 	int curs = 0;
-	int memory[RW_TIMES];
+	int memory[2*RW_TIMES];
 	int i = 0;
-#if 0
-  // debug
-  disable_interrupt();
-  uint32_t index;
-  for (index = 0; index < 64; index++) {
-    uint32_t pagemask, entryhi, entrylo0, entrylo1;
-    tlbr(&pagemask, &entryhi, &entrylo0, &entrylo1, index);
-    printk("index: %08x pagemask: %08x entryhi: %08x entrylo0: %08x entrylo1: %08x\n",
-        index, pagemask, entryhi, entrylo0, entrylo1);
-  }
-  for (i=0;i<64;i++)
-    *((int*)(i<<12)) = i;
-  for (i=0;i<64;i++)
-    printk("%08x: %d\n", i<<12, *((int*)(i<<12)));
-  while (!read_uart_ch());
-  enable_interrupt();
-#endif
   while (1) {
     sys_clear();
     screen_move_cursor(0, 0);

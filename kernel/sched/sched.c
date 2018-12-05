@@ -132,6 +132,12 @@ void scheduler(void)
   current_running->status = TASK_RUNNING;
   __asm__ volatile ("mtc0 %0, $10\n" :: "r" (current_running->pid));
 #if 0
+  {
+    uint32_t entryhi;
+    __asm__ volatile ("mfc0 %0, $10\n" : "=r" (entryhi));
+    vt100_move_cursor(1,30);
+    printk("entryhi: %08x", entryhi);
+  }
   // print priorities for debugging
   {
     int i;

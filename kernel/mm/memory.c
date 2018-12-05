@@ -20,6 +20,51 @@ struct pte *alloc_ptelist() {
   return ret;
 }
 
+static void tlbr
+(
+ uint32_t *pagemask,
+ uint32_t *entryhi,
+ uint32_t *entrylo0,
+ uint32_t *entrylo1,
+ uint32_t index
+)
+{
+  __asm__ volatile (
+    "mtc0 %4, $0\n"
+    "tlbr\n"
+    "mfc0 $t0, $5\n"
+    "sw $t0, %0\n"
+    "mfc0 $t0, $10\n"
+    "sw $t0, %1\n"
+    "mfc0 $t0, $2\n"
+    "sw $t0, %2\n"
+    "mfc0 $t0, $3\n"
+    "sw $t0, %3\n"
+    :
+    "=m" (*pagemask),
+    "=m" (*entryhi),
+    "=m" (*entrylo0),
+    "=m" (*entrylo1)
+    : "r" (index)
+    : "t0"
+  );
+}
+
+void dumptlb() {
+  uint32_t index;
+  vt100_move_cursor(1, 31);
+  for (index = 0; index < 32; index+=2) {
+    uint32_t pagemask, entryhi, entrylo0, entrylo1;
+    tlbr(&pagemask, &entryhi, &entrylo0, &entrylo1, index);
+    printk("%08x hi: %08x lo0: %08x lo1: %08x   ",
+        index, entryhi, entrylo0, entrylo1);
+    tlbr(&pagemask, &entryhi, &entrylo0, &entrylo1, index+1);
+    printk("%08x hi: %08x lo0: %08x lo1: %08x\n",
+        index+1, entryhi, entrylo0, entrylo1);
+  }
+  //while (!read_uart_ch());
+}
+
 static inline void fill_tlb
 (
   uint32_t vpn2,
@@ -41,6 +86,7 @@ static inline void fill_tlb
     "r" (index)
   );
   pte->tlbindex = index;
+  //dumptlb();
 }
 
 static inline void update_tlb
@@ -58,6 +104,7 @@ static inline void update_tlb
     "r" (pte->entrylo0 & 0x3fffffff),
     "r" (pte->entrylo1 & 0x3fffffff)
   );
+  //dumptlb();
 }
 
 static inline void fill_tlb_simple
@@ -82,6 +129,25 @@ static inline void fill_tlb_simple
     "r" (index)
   );
 }
+
+#ifdef ENABLE_SWAP
+#if 0
+
+void sdread_stub(void* buf, unsigned int base, int n) {
+  printk("sdread %08x, %08x, %08x\n", (uint32_t)buf, base, n);
+  sdread(buf, base, n);
+}
+
+void sdwrite_stub(void* buf, unsigned int base, int n) {
+  printk("sdread %08x, %08x, %08x\n", (uint32_t)buf, base, n);
+  sdwrite(buf, base, n);
+}
+
+#define sdread sdread_stub
+#define sdwrite sdwrite_stub
+
+#endif
+#endif
 
 #ifdef ENABLE_SWAP
 void store_pageframe(int pfindex) {
@@ -152,48 +218,18 @@ void validate_pte(struct pte *pte) {
     pte->allocated = 1;
     pte->pfn0 = 0x1000 + pfindex*2;
     pte->pfn1 = 0x1001 + pfindex*2;
+    pte->cachable0 = 2;
+    pte->cachable1 = 2;
+    pte->dirty0 = 1;
+    pte->dirty1 = 1;
+    pte->valid0 = 1;
+    pte->valid1 = 1;
   }
 #ifdef ENABLE_SWAP
   if (pte->swapped) {
     load_pageframe(pte->pfn0);
   }
 #endif
-  pte->cachable0 = 2;
-  pte->cachable1 = 2;
-  pte->dirty0 = 1;
-  pte->dirty1 = 1;
-  pte->valid0 = 1;
-  pte->valid1 = 1;
-}
-
-void tlbr
-(
- uint32_t *pagemask,
- uint32_t *entryhi,
- uint32_t *entrylo0,
- uint32_t *entrylo1,
- uint32_t index
-)
-{
-  __asm__ volatile (
-    "mtc0 %4, $0\n"
-    "tlbr\n"
-    "mfc0 $t0, $5\n"
-    "sw $t0, %0\n"
-    "mfc0 $t0, $10\n"
-    "sw $t0, %1\n"
-    "mfc0 $t0, $2\n"
-    "sw $t0, %2\n"
-    "mfc0 $t0, $3\n"
-    "sw $t0, %3\n"
-    :
-    "=m" (*pagemask),
-    "=m" (*entryhi),
-    "=m" (*entrylo0),
-    "=m" (*entrylo1)
-    : "r" (index)
-    : "t0"
-  );
 }
 
 void do_TLB_Refill() {

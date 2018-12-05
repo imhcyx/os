@@ -21,8 +21,8 @@ SRC_IMAGE	= ./tools/createimage.c
 DEFMACRO =
 LIBS =
 
-ENABLE_SWAP ?= y
-ifeq ($(ENABLE_SWAP), y)
+SWAP ?= y
+ifeq ($(SWAP), y)
 DEFMACRO += -DENABLE_SWAP
 LIBS += -lepmon
 endif
