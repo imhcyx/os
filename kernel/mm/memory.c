@@ -101,8 +101,8 @@ void store_pageframe(int pfindex) {
   pte->valid0 = 0;
   pte->valid1 = 0;
   pte->swapped = 1;
-  sdwrite((void*)PFN2VA(pte->pfn0), 4096*i*2, 4096);
-  sdwrite((void*)PFN2VA(pte->pfn1), 4096*(i*2+1), 4096);
+  sdwrite((void*)PFN2VA(pte->pfn0), SWAP_OFFSET_BASE+4096*i*2, 4096);
+  sdwrite((void*)PFN2VA(pte->pfn1), SWAP_OFFSET_BASE+4096*(i*2+1), 4096);
   pte->pfn0 = i;
   update_tlb(pte);
 }
@@ -137,8 +137,8 @@ void load_pageframe(int sfindex) {
   swapframe[sfindex].pte = NULL;
   pte->pfn0 = 0x1000 + i*2;
   pte->pfn1 = 0x1001 + i*2;
-  sdread((void*)PFN2VA(pte->pfn0), 4096*sfindex*2, 4096);
-  sdread((void*)PFN2VA(pte->pfn1), 4096*(sfindex*2+1), 4096);
+  sdread((void*)PFN2VA(pte->pfn0), SWAP_OFFSET_BASE+4096*sfindex*2, 4096);
+  sdread((void*)PFN2VA(pte->pfn1), SWAP_OFFSET_BASE+4096*(sfindex*2+1), 4096);
   pte->swapped = 0;
   pte->valid0 = 1;
   pte->valid1 = 1;
