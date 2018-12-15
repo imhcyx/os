@@ -6,7 +6,7 @@
 #define TLB_ENTRY_NUMBER 32
 
 #define SWAP_FRAME_NUMBER_2 32
-#define PAGE_FRAME_NUMBER_2 2
+#define PAGE_FRAME_NUMBER_2 16
 
 // VA: 0x00000000~0x7fffffff : 19 bits
 
