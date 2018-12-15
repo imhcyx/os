@@ -26,7 +26,6 @@
 #ifndef INCLUDE_TEST_H_
 #define INCLUDE_TEST_H_
 
-#include "test3.h"
 #include "test4.h"
 
 void test_shell();
