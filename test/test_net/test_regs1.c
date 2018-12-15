@@ -26,18 +26,6 @@ void clear_interrupt()
     reg_write_32(0xbfe11000 + DmaStatus, data);
 }
 
-static void send_desc_init(mac_t *mac)
-{
-    
-}
-
-static void recv_desc_init(mac_t *mac)
-{
-    
-}
-
-
-
 static void mii_dul_force(mac_t *mac)
 {
     reg_write_32(mac->dma_addr, 0x80); //?s

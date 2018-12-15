@@ -125,6 +125,20 @@ static int _barrier_wait(int arg1, int arg2, int arg3) {
   return 0;
 }
 
+static int _init_mac(int arg1, int arg2, int arg3) {
+  do_init_mac();
+  return 0;
+}
+
+static int _net_send(int arg1, int arg2, int arg3) {
+  do_net_send(arg1, arg2);
+  return 0;
+}
+
+static int _net_recv(int arg1, int arg2, int arg3) {
+  return do_net_recv(arg1, arg2, arg3);
+}
+
 void init_syscall_table() {
 #define def_syscall(x) syscall[syscall_##x] = _##x
   def_syscall(spawn);
@@ -149,6 +163,9 @@ void init_syscall_table() {
   def_syscall(condition_broadcast);
   def_syscall(barrier_init);
   def_syscall(barrier_wait);
+  def_syscall(init_mac);
+  def_syscall(net_send);
+  def_syscall(net_recv);
 }
 
 int system_call_helper()
@@ -263,4 +280,16 @@ void barrier_init(barrier_t *bar, int num) {
 
 void barrier_wait(barrier_t *bar) {
   invoke_syscall(syscall_barrier_wait, (int)bar, IGNORE, IGNORE);
+}
+
+void sys_init_mac() {
+  invoke_syscall(syscall_init_mac, IGNORE, IGNORE, IGNORE);
+}
+
+void sys_net_send(uint32_t td, uint32_t td_phy) {
+  invoke_syscall(syscall_net_send, (int)td, (int) td_phy, IGNORE);
+}
+
+uint32_t sys_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr) {
+  return invoke_syscall(syscall_net_recv, (int)rd, (int)rd_phy, (int)daddr);
 }

@@ -796,4 +796,8 @@ void do_init_mac(void);
 void do_wait_recv_package(void);
 void irq_mac(void);
 void check_recv(mac_t *test_mac);
+
+void send_desc_init(mac_t *mac);
+void recv_desc_init(mac_t *mac);
+
 #endif

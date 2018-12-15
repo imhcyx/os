@@ -323,3 +323,9 @@ void do_wait_recv_package(void)
 {
 
 }
+
+void send_desc_init(mac_t *mac) {
+}
+
+void recv_desc_init(mac_t *mac) {
+}

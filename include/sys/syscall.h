@@ -65,6 +65,10 @@ enum {
   syscall_barrier_init,
   syscall_barrier_wait,
 
+  syscall_init_mac,
+  syscall_net_send,
+  syscall_net_recv,
+
   NUM_SYSCALLS
 
 };
@@ -104,5 +108,9 @@ void condition_broadcast(condition_t *condition);
 
 void barrier_init(barrier_t *, int);
 void barrier_wait(barrier_t *);
+
+void sys_init_mac();
+void sys_net_send(uint32_t td, uint32_t td_phy);
+uint32_t sys_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr);
 
 #endif
