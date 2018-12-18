@@ -301,13 +301,25 @@ uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
     //you should add some code to start recv and check recv packages
     reg_write_32(DMA_BASE_ADDR + DmaRxBaseAddr, rd_phy);
     desc_t *p = (desc_t*)rd;
-    while (p->tdes1 | RxDescEndOfRing == 0) {
+    uint32_t num = 0;
+    int i;
+    while (1) {
+      num++;
       p->tdes0 |= DescOwnByDma;
-      reg_write_32(DMA_BASE_ADDR + DmaRxPollDemand, 1);
-      while (((volatile desc_t*)p)->tdes0 | DescOwnByDma);
-      dump_data((uint32_t*)PA2VA(p->tdes2));
+      if ((p->tdes1 & RxDescEndOfRing) != 0) break;
       p = (desc_t*)PA2VA(p->tdes3);
     }
+    for (i=0; i<num; i++)
+      reg_write_32(DMA_BASE_ADDR + DmaRxPollDemand, 1);
+    p = (desc_t*)rd;
+    while (1) {
+      volatile uint32_t *pdes0 = &p->tdes0;
+      while (*pdes0 & DescOwnByDma);
+      dump_data((uint32_t*)PA2VA(p->tdes2));
+      if ((p->tdes1 & RxDescEndOfRing) != 0) break;
+      p = (desc_t*)PA2VA(p->tdes3);
+    }
+    return 0;
 }
 
 void do_net_send(uint32_t td, uint32_t td_phy)
@@ -321,11 +333,16 @@ void do_net_send(uint32_t td, uint32_t td_phy)
     //you should add some code to start send packages
     reg_write_32(DMA_BASE_ADDR + DmaTxBaseAddr, td_phy);
     desc_t *p = (desc_t*)td;
-    while (p->tdes1 | TxDescEndOfRing == 0) {
+    uint32_t num = 0;
+    int i;
+    while (1) {
+      num++;
       p->tdes0 |= DescOwnByDma;
-      reg_write_32(DMA_BASE_ADDR + DmaTxPollDemand, 1);
+      if ((p->tdes1 & TxDescEndOfRing) != 0) break;
       p = (desc_t*)PA2VA(p->tdes3);
     }
+    for (i=0; i<num; i++)
+      reg_write_32(DMA_BASE_ADDR + DmaTxPollDemand, 1);
 }
 
 void do_init_mac(void)
@@ -369,7 +386,7 @@ void send_desc_init(mac_t *mac) {
   for (i=0; i<mac->pnum; i++) {
     p->tdes0 = 0;
     p->tdes1 = ((i==mac->pnum-1) ? 0x03000000 : 0x01000000) | mac->psize;
-    p->tdes2 = desc_phy + mac->psize*i;
+    p->tdes2 = buf_phy + mac->psize*i;
     p->tdes3 = (i==mac->pnum-1) ? desc_phy : desc_phy+sizeof(desc_t)*(i+1);
     p++;
   }
@@ -396,7 +413,7 @@ void recv_desc_init(mac_t *mac) {
   for (i=0; i<mac->pnum; i++) {
     p->tdes0 = 0;
     p->tdes1 = ((i==mac->pnum-1) ? 0x03000000 : 0x01000000) | mac->psize;
-    p->tdes2 = desc_phy + mac->psize*i;
+    p->tdes2 = buf_phy + mac->psize*i;
     p->tdes3 = (i==mac->pnum-1) ? desc_phy : desc_phy+sizeof(desc_t)*(i+1);
     p++;
   }

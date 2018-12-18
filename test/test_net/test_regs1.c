@@ -63,6 +63,8 @@ void phy_regs_task1()
     test_mac.pnum = PNUM;       // pnum
 
     send_desc_init(&test_mac);
+    for (i=0; i<PNUM; i++)
+      memcpy((void*)test_mac.saddr+i*PSIZE*4, buffer, sizeof(buffer));
 
     dma_control_init(&test_mac, DmaStoreAndForward | DmaTxSecondFrame | DmaRxThreshCtrl128);
     clear_interrupt(&test_mac);
