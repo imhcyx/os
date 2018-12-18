@@ -126,7 +126,7 @@ void phy_regs_task2()
 
 void phy_regs_task3()
 {
-    uint32_t print_location = 1;
+    uint32_t print_location = 0;
     sys_move_cursor(1, print_location);
     printf("> [INIT] Waiting for MAC initialization .\n");
     sys_init_mac();

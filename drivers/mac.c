@@ -2,6 +2,7 @@
 #include "irq.h"
 
 
+#define PA2VA(x) (0xa0000000|(x))
 
 uint32_t reg_read_32(uint32_t addr)
 {
@@ -280,26 +281,51 @@ void set_mac_addr(mac_t *mac)
     data = (MacAddr[3] << 24) | (MacAddr[2] << 16) | (MacAddr[1] << 8) | MacAddr[0];
     reg_write_32(mac->mac_addr + MacLow, data);
 }
+
+void dump_data(uint32_t *buf) {
+  int i;
+  vt100_move_cursor(1, 5);
+  for (i=0; i<16; i++) {
+    printk("%08x %08x %08x %08x\n", buf[4*i], buf[4*i+1], buf[4*i+2], buf[4*i+3]);
+  }
+}
+
 uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
 {
-   //PLEASE enable MAC-RX
+    //PLEASE enable MAC-RX
+    reg_write_32(GMAC_BASE_ADDR + GmacConfig, reg_read_32(GMAC_BASE_ADDR + GmacConfig) | GmacRxEnable);
 
-    reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(GMAC_BASE_ADDR + 0x18) | 0x02200002); // start tx, rx
+    reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(DMA_BASE_ADDR + 0x18) | 0x02200002); // start tx, rx
     reg_write_32(DMA_BASE_ADDR + 0x1c, 0x10001 | (1 << 6));
     
     //you should add some code to start recv and check recv packages
+    reg_write_32(DMA_BASE_ADDR + DmaRxBaseAddr, rd_phy);
+    desc_t *p = (desc_t*)rd;
+    while (p->tdes1 | RxDescEndOfRing == 0) {
+      p->tdes0 |= DescOwnByDma;
+      reg_write_32(DMA_BASE_ADDR + DmaRxPollDemand, 1);
+      while (((volatile desc_t*)p)->tdes0 | DescOwnByDma);
+      dump_data((uint32_t*)PA2VA(p->tdes2));
+      p = (desc_t*)PA2VA(p->tdes3);
+    }
 }
 
 void do_net_send(uint32_t td, uint32_t td_phy)
 {
-     
-   
-     //PLEASE enable MAC-TX
+    //PLEASE enable MAC-TX
+    reg_write_32(GMAC_BASE_ADDR + GmacConfig, reg_read_32(GMAC_BASE_ADDR + GmacConfig) | GmacTxEnable);
     
     reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(DMA_BASE_ADDR + 0x18) | 0x02202000); //0x02202002); // start tx, rx
     reg_write_32(DMA_BASE_ADDR + 0x1c, 0x10001 | (1 << 6));
 
     //you should add some code to start send packages
+    reg_write_32(DMA_BASE_ADDR + DmaTxBaseAddr, td_phy);
+    desc_t *p = (desc_t*)td;
+    while (p->tdes1 | TxDescEndOfRing == 0) {
+      p->tdes0 |= DescOwnByDma;
+      reg_write_32(DMA_BASE_ADDR + DmaTxPollDemand, 1);
+      p = (desc_t*)PA2VA(p->tdes3);
+    }
 }
 
 void do_init_mac(void)
@@ -324,8 +350,59 @@ void do_wait_recv_package(void)
 
 }
 
+uint32_t desc_allocaddr = NET_DESC_ALLOCBASE_PHY;
+uint32_t buf_allocaddr = NET_BUF_ALLOCBASE_PHY;
+
 void send_desc_init(mac_t *mac) {
+  uint32_t desc_phy, buf_phy;
+  desc_t *desc, *p;
+  int i;
+
+  desc_phy = desc_allocaddr;
+  desc_allocaddr += sizeof(desc_t) * mac->pnum;
+  buf_phy = buf_allocaddr;
+  buf_allocaddr += mac->psize * mac->pnum;
+
+  desc = (desc_t*)PA2VA(desc_phy);
+  p = desc;
+  
+  for (i=0; i<mac->pnum; i++) {
+    p->tdes0 = 0;
+    p->tdes1 = ((i==mac->pnum-1) ? 0x03000000 : 0x01000000) | mac->psize;
+    p->tdes2 = desc_phy + mac->psize*i;
+    p->tdes3 = (i==mac->pnum-1) ? desc_phy : desc_phy+sizeof(desc_t)*(i+1);
+    p++;
+  }
+
+  mac->saddr = PA2VA(buf_phy);
+  mac->saddr_phy = buf_phy;
+  mac->td = PA2VA(desc_phy);
+  mac->td_phy = desc_phy;
 }
 
 void recv_desc_init(mac_t *mac) {
+  uint32_t desc_phy, buf_phy;
+  desc_t *desc, *p;
+  int i;
+
+  desc_phy = desc_allocaddr;
+  desc_allocaddr += sizeof(desc_t) * mac->pnum;
+  buf_phy = buf_allocaddr;
+  buf_allocaddr += mac->psize * mac->pnum;
+
+  desc = (desc_t*)PA2VA(desc_phy);
+  p = desc;
+  
+  for (i=0; i<mac->pnum; i++) {
+    p->tdes0 = 0;
+    p->tdes1 = ((i==mac->pnum-1) ? 0x03000000 : 0x01000000) | mac->psize;
+    p->tdes2 = desc_phy + mac->psize*i;
+    p->tdes3 = (i==mac->pnum-1) ? desc_phy : desc_phy+sizeof(desc_t)*(i+1);
+    p++;
+  }
+
+  mac->daddr = PA2VA(buf_phy);
+  mac->daddr_phy = buf_phy;
+  mac->rd = PA2VA(desc_phy);
+  mac->rd_phy = desc_phy;
 }
