@@ -139,6 +139,11 @@ static int _net_recv(int arg1, int arg2, int arg3) {
   return do_net_recv(arg1, arg2, arg3);
 }
 
+static int _wait_recv_package(int arg1, int arg2, int arg3) {
+  do_wait_recv_package();
+  return 0;
+}
+
 void init_syscall_table() {
 #define def_syscall(x) syscall[syscall_##x] = _##x
   def_syscall(spawn);
@@ -166,6 +171,7 @@ void init_syscall_table() {
   def_syscall(init_mac);
   def_syscall(net_send);
   def_syscall(net_recv);
+  def_syscall(wait_recv_package);
 }
 
 int system_call_helper()
@@ -292,4 +298,8 @@ void sys_net_send(uint32_t td, uint32_t td_phy) {
 
 uint32_t sys_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr) {
   return invoke_syscall(syscall_net_recv, (int)rd, (int)rd_phy, (int)daddr);
+}
+
+void sys_wait_recv_package() {
+  invoke_syscall(syscall_wait_recv_package, IGNORE, IGNORE, IGNORE);
 }

@@ -68,6 +68,7 @@ enum {
   syscall_init_mac,
   syscall_net_send,
   syscall_net_recv,
+  syscall_wait_recv_package,
 
   NUM_SYSCALLS
 
@@ -112,5 +113,6 @@ void barrier_wait(barrier_t *);
 void sys_init_mac();
 void sys_net_send(uint32_t td, uint32_t td_phy);
 uint32_t sys_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr);
+void sys_wait_recv_package();
 
 #endif

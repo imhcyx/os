@@ -65,8 +65,8 @@ void phy_regs_task1()
     send_desc_init(&test_mac);
     sys_move_cursor(1, print_location);
     printf("> [SEND TASK] filling buffers                   \n");
-    //for (i=0; i<PNUM; i++)
-      //memcpy((void*)test_mac.saddr+i*PSIZE*4, buffer, sizeof(buffer));
+    for (i=0; i<PNUM; i++)
+      memcpy((void*)test_mac.saddr+i*PSIZE*4, buffer, sizeof(buffer));
 
     dma_control_init(&test_mac, DmaStoreAndForward | DmaTxSecondFrame | DmaRxThreshCtrl128);
     clear_interrupt(&test_mac);
