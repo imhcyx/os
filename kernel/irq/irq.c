@@ -32,6 +32,8 @@ static void irq_timer()
   scheduler();
   // reflush screen
   screen_reflush();
+  // 5-2
+  check_recv();
   // increase time count
   time_elapsed += CLK_INT_CYCLE;
   // reset timer

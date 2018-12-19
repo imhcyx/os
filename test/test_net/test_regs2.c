@@ -26,14 +26,6 @@ void clear_interrupt()
     reg_write_32(0xbfe11000 + DmaStatus, data);
 }
 
-static void send_desc_init(mac_t *mac)
-{
-   
-}
-
-static void recv_desc_init(mac_t *mac)
-{
-}
 
 
 static void mii_dul_force(mac_t *mac)
@@ -73,6 +65,11 @@ void phy_regs_task1()
     test_mac.pnum = PNUM;       // pnum
 
     send_desc_init(&test_mac);
+    sys_move_cursor(1, print_location);
+    printf("> [SEND TASK] filling buffers                   \n");
+    for (i=0; i<PNUM; i++)
+      memcpy((void*)test_mac.saddr+i*PSIZE*4, buffer, sizeof(buffer));
+
 
     dma_control_init(&test_mac, DmaStoreAndForward | DmaTxSecondFrame | DmaRxThreshCtrl128);
     clear_interrupt(&test_mac);
@@ -133,11 +130,13 @@ void phy_regs_task2()
         printf("[RECV TASK]     net recv is fault!                       ");
     }
 
+    /*
     ch_flag = 0;
     for (i = 0; i < PNUM; i++)
     {
         recv_flag[i] = 0;
     }
+    */
 
     uint32_t cnt = 0;
     uint32_t *Recv_desc;

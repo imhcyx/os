@@ -15,7 +15,7 @@ SRC_SYSCALL	= $(wildcard ./kernel/syscall/*.c)
 SRC_LIBS	= $(wildcard ./libs/*.c)
 
 SRC_TEST	= $(wildcard ./test/*.c)
-SRC_TEST += ./test/test_net/test_regs1.c
+SRC_TEST += ./test/test_net/test_regs2.c
 
 SRC_IMAGE	= ./tools/createimage.c
 

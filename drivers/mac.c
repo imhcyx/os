@@ -1,6 +1,7 @@
 #include "mac.h"
 #include "irq.h"
 
+queue_t recv_block_queue;
 
 #define PA2VA(x) (0xa0000000|(x))
 
@@ -244,8 +245,26 @@ void irq_enable(int IRQn)
 {
 }
 
+void dump_data(uint32_t *buf) {
+  int i;
+  vt100_move_cursor(1, 5);
+  for (i=0; i<16; i++) {
+    printk("%08x %08x %08x %08x\n", buf[4*i], buf[4*i+1], buf[4*i+2], buf[4*i+3]);
+  }
+}
+
+desc_t *rdesc = NULL;
 void check_recv(mac_t *test_mac)
 {
+    if (!rdesc) return;
+    if (rdesc->tdes0 & DescOwnByDma) return;
+    dump_data((uint32_t*)PA2VA(rdesc->tdes2));
+    if ((rdesc->tdes1 & RxDescEndOfRing) != 0) {
+      do_unblock_one(&recv_block_queue);
+      rdesc = NULL;
+      return;
+    }
+    rdesc = (desc_t*)PA2VA(rdesc->tdes3);
 }
 
 void set_sram_ctr()
@@ -282,14 +301,6 @@ void set_mac_addr(mac_t *mac)
     reg_write_32(mac->mac_addr + MacLow, data);
 }
 
-void dump_data(uint32_t *buf) {
-  int i;
-  vt100_move_cursor(1, 5);
-  for (i=0; i<16; i++) {
-    printk("%08x %08x %08x %08x\n", buf[4*i], buf[4*i+1], buf[4*i+2], buf[4*i+3]);
-  }
-}
-
 uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
 {
     reg_write_32(DMA_BASE_ADDR + DmaRxBaseAddr, rd_phy);
@@ -311,14 +322,7 @@ uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
     }
     for (i=0; i<num; i++)
       reg_write_32(DMA_BASE_ADDR + DmaRxPollDemand, 1);
-    p = (desc_t*)rd;
-    while (1) {
-      volatile uint32_t *pdes0 = &p->tdes0;
-      while (*pdes0 & DescOwnByDma);
-      dump_data((uint32_t*)PA2VA(p->tdes2));
-      if ((p->tdes1 & RxDescEndOfRing) != 0) break;
-      p = (desc_t*)PA2VA(p->tdes3);
-    }
+    rdesc = (desc_t*)rd;
     return 0;
 }
 
@@ -364,7 +368,7 @@ void do_init_mac(void)
 
 void do_wait_recv_package(void)
 {
-
+    do_block(&recv_block_queue);
 }
 
 uint32_t desc_allocaddr = NET_DESC_ALLOCBASE_PHY;
