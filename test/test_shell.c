@@ -304,6 +304,47 @@ static void exec_command(char *cmd) {
     return;
   }
 #endif
+  else if (!strcmp(token, "mac")) {
+    screen_clear();
+    screen_move_cursor(0, 0);
+    printf_mac_regs();
+    return;
+  }
+  else if (!strcmp(token, "dma")) {
+    screen_clear();
+    screen_move_cursor(0, 0);
+    printf_dma_regs();
+    return;
+  }
+  else if (!strcmp(token, "d")) {
+    uint32_t val;
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    val = hex2u(token);
+    shell_printf("%08x: %08x\n", val, *(uint32_t*)val);
+    return;
+  }
+  else if (!strcmp(token, "s")) {
+    uint32_t val, val2;
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    val = hex2u(token);
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    val2 = hex2u(token);
+    *(uint32_t*)val = val2;
+    shell_printf("set %08x to %08x\n", val, val2);
+    return;
+  }
   else if (!strcmp(token, "")) {
     return;
   }
@@ -350,17 +391,5 @@ void test_shell()
       }
     }
     exec_command(buf);
-#if 0
-    // debug
-    {
-      int i;
-      for (i=0; i<SHELL_HEIGHT; i++) {
-        vt100_move_cursor(1, i+1);
-        printk(scrbuf[i]);
-      }
-      vt100_move_cursor(1, 12);
-      printk("%d %d", curline, startline);
-    }
-#endif
   }
 }
