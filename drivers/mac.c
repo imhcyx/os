@@ -159,7 +159,7 @@ void printf_dma_regs()
     // [20-21] Current Host TX/RX Description Register
     regs_val1 = read_register(DMA_BASE_ADDR, DmaTxCurrAddr);
     regs_val2 = read_register(DMA_BASE_ADDR, DmaRxCurrAddr);
-    printk("  [20-21] Current Host TX/RX Buffer Address : 0x%x/0x%x\n", regs_val1, regs_val2);
+    printf("  [20-21] Current Host TX/RX Buffer Address : 0x%x/0x%x\n", regs_val1, regs_val2);
 }
 
 /* print DMA regs */
@@ -292,14 +292,6 @@ void dump_data(uint32_t *buf) {
 
 uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
 {
-    //PLEASE enable MAC-RX
-    reg_write_32(GMAC_BASE_ADDR + GmacConfig, reg_read_32(GMAC_BASE_ADDR + GmacConfig) | GmacRxEnable);
-
-    reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(DMA_BASE_ADDR + 0x18) | 0x02200002); // start tx, rx
-    reg_write_32(DMA_BASE_ADDR + 0x1c, 0x10001 | (1 << 6));
-    
-    //you should add some code to start recv and check recv packages
-    reg_write_32(DMA_BASE_ADDR + DmaRxBaseAddr, rd_phy);
     desc_t *p = (desc_t*)rd;
     uint32_t num = 0;
     int i;
@@ -309,6 +301,14 @@ uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
       if ((p->tdes1 & RxDescEndOfRing) != 0) break;
       p = (desc_t*)PA2VA(p->tdes3);
     }
+    reg_write_32(DMA_BASE_ADDR + DmaRxBaseAddr, rd_phy);
+    //PLEASE enable MAC-RX
+    reg_write_32(GMAC_BASE_ADDR + GmacConfig, reg_read_32(GMAC_BASE_ADDR + GmacConfig) | GmacRxEnable);
+
+    reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(DMA_BASE_ADDR + 0x18) | 0x02200002); // start tx, rx
+    reg_write_32(DMA_BASE_ADDR + 0x1c, 0x10001 | (1 << 6));
+    
+    //you should add some code to start recv and check recv packages
     for (i=0; i<num; i++)
       reg_write_32(DMA_BASE_ADDR + DmaRxPollDemand, 1);
     p = (desc_t*)rd;
@@ -324,14 +324,6 @@ uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
 
 void do_net_send(uint32_t td, uint32_t td_phy)
 {
-    //PLEASE enable MAC-TX
-    reg_write_32(GMAC_BASE_ADDR + GmacConfig, reg_read_32(GMAC_BASE_ADDR + GmacConfig) | GmacTxEnable);
-    
-    reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(DMA_BASE_ADDR + 0x18) | 0x02202000); //0x02202002); // start tx, rx
-    reg_write_32(DMA_BASE_ADDR + 0x1c, 0x10001 | (1 << 6));
-
-    //you should add some code to start send packages
-    reg_write_32(DMA_BASE_ADDR + DmaTxBaseAddr, td_phy);
     desc_t *p = (desc_t*)td;
     uint32_t num = 0;
     int i;
@@ -341,6 +333,14 @@ void do_net_send(uint32_t td, uint32_t td_phy)
       if ((p->tdes1 & TxDescEndOfRing) != 0) break;
       p = (desc_t*)PA2VA(p->tdes3);
     }
+    reg_write_32(DMA_BASE_ADDR + DmaTxBaseAddr, td_phy);
+    //PLEASE enable MAC-TX
+    reg_write_32(GMAC_BASE_ADDR + GmacConfig, reg_read_32(GMAC_BASE_ADDR + GmacConfig) | GmacTxEnable);
+    
+    reg_write_32(DMA_BASE_ADDR + 0x18, reg_read_32(DMA_BASE_ADDR + 0x18) | 0x02202000); //0x02202002); // start tx, rx
+    reg_write_32(DMA_BASE_ADDR + 0x1c, 0x10001 | (1 << 6));
+
+    //you should add some code to start send packages
     for (i=0; i<num; i++)
       reg_write_32(DMA_BASE_ADDR + DmaTxPollDemand, 1);
 }
