@@ -33,7 +33,7 @@ static void irq_timer()
   // reflush screen
   screen_reflush();
   // 5-2
-  check_recv();
+  //check_recv();
   // increase time count
   time_elapsed += CLK_INT_CYCLE;
   // reset timer
@@ -44,11 +44,21 @@ static void irq_timer()
   );
 }
 
+extern void irq_mac();
+extern void irq_mac_bonus();
+void (*mac_int_handler)() = irq_mac;
+static void irq_device()
+{
+  if ((reg_read_32(0xbfd01058)&(1<<3))!=0) {
+    mac_int_handler();
+  }
+}
+
 static void (*irq_handler[8])() = {
   NULL,
   NULL,
   NULL,
-  NULL,
+  irq_device,
   NULL,
   NULL,
   NULL,

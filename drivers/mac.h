@@ -798,7 +798,7 @@ void irq_mac(void);
 void check_recv(mac_t *test_mac);
 
 #define NET_DESC_ALLOCBASE_PHY 0x1c00000
-#define NET_BUF_ALLOCBASE_PHY 0x1c80000
+#define NET_BUF_ALLOCBASE_PHY 0x1d00000
 void send_desc_init(mac_t *mac);
 void recv_desc_init(mac_t *mac);
 

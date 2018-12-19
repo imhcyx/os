@@ -345,6 +345,27 @@ static void exec_command(char *cmd) {
     shell_printf("set %08x to %08x\n", val, val2);
     return;
   }
+  else if (!strcmp(token, "bonus")) {
+    extern void(*mac_int_handler)();
+    extern void irq_mac();
+    extern void irq_mac_bonus();
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "on")) {
+      mac_int_handler = irq_mac_bonus;
+      shell_printf("set p5 bonus mode on\n");
+      return;
+    }
+    if (!strcmp(token, "off")) {
+      extern uint32_t bonus_count;
+      mac_int_handler = irq_mac;
+      shell_printf("set p5 bonus mode off\n");
+      shell_printf("%d packets received\n", bonus_count);
+      bonus_count = 0;
+      return;
+    }
+    shell_printf("missing parameter\n");
+    return;
+  }
   else if (!strcmp(token, "")) {
     return;
   }

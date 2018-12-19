@@ -25,17 +25,6 @@ void clear_interrupt()
     reg_write_32(0xbfe11000 + DmaStatus, data);
 }
 
-static void send_desc_init(mac_t *mac)
-{
-    
-}
-
-static void recv_desc_init(mac_t *mac)
-{
-    
-}
-
-
 static void mii_dul_force(mac_t *mac)
 {
     reg_write_32(mac->dma_addr, 0x80); //?s
@@ -74,15 +63,19 @@ void phy_regs_task1()
     test_mac.pnum = PNUM;       // pnum
 
     send_desc_init(&test_mac);
+    sys_move_cursor(1, print_location);
+    printf("> [SEND TASK] filling buffers                   \n");
+    for (i=0; i<PNUM; i++)
+      memcpy((void*)test_mac.saddr+i*PSIZE*4, buffer, sizeof(buffer));
 
     dma_control_init(&test_mac, DmaStoreAndForward | DmaTxSecondFrame | DmaRxThreshCtrl128);
     clear_interrupt(&test_mac);
 
     mii_dul_force(&test_mac);
 
-    register_irq_handler(LS1C_MAC_IRQ, irq_mac);
+    //register_irq_handler(LS1C_MAC_IRQ, irq_mac);
 
-    irq_enable(LS1C_MAC_IRQ);
+    irq_enable(0);
     sys_move_cursor(1, print_location);
     printf("> [SEND TASK] start send package.               \n");
 
@@ -111,7 +104,7 @@ void phy_regs_task2()
     test_mac.dma_addr = 0xbfe11000;
 
     test_mac.psize = PSIZE * 4; // 64bytes
-    test_mac.pnum = PNUM;       // pnum
+    test_mac.pnum = 256;//PNUM;       // pnum
     recv_desc_init(&test_mac);
 
     dma_control_init(&test_mac, DmaStoreAndForward | DmaTxSecondFrame | DmaRxThreshCtrl128);
@@ -124,11 +117,11 @@ void phy_regs_task2()
     printf("[RECV TASK] start recv:                    ");
     ret = sys_net_recv(test_mac.rd, test_mac.rd_phy, test_mac.daddr);
   
-    ch_flag = 0;
+    /*ch_flag = 0;
     for (i = 0; i < PNUM; i++)
     {
         recv_flag[i] = 0;
-    }
+    }*/
 
     uint32_t cnt = 0;
     uint32_t *Recv_desc;
@@ -140,7 +133,9 @@ void phy_regs_task2()
         printf("> [RECV TASK] waiting receive package.\n");
         sys_wait_recv_package();
     }
+    disable_interrupt();
     check_recv(&test_mac);
+    enable_interrupt();
 
     sys_exit();
 }

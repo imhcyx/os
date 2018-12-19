@@ -237,12 +237,42 @@ void print_rx_dscrb(mac_t *mac)
 #endif
 }
 
+#define INT1_EN  0xbfd0105c
+#define INT1_CLR 0xbfd01064
+#define INT1_POL 0xbfd01068
+#define INT1_EDGE 0xbfd0106c
+
+desc_t *rlast = NULL;
 void irq_mac(void)
 {
+  if (rlast && (rlast->tdes0 & DescOwnByDma) == 0) {
+    do_unblock_one(&recv_block_queue);
+    rlast = NULL;
+  }
+  clear_interrupt();
+  reg_write_32(INT1_CLR, 0xffffffff);
+}
+
+uint32_t bonus_count = 0;
+void irq_mac_bonus() {
+  static desc_t *rdesc = NULL;
+  clear_interrupt();
+  if (!rdesc)
+    rdesc = (desc_t*)PA2VA(reg_read_32(DMA_BASE_ADDR + DmaRxBaseAddr));
+  while ((rdesc->tdes0 & DescOwnByDma) == 0) {
+    bonus_count++;
+    rdesc->tdes0 = 0x80000000;
+    rdesc = (desc_t*)PA2VA(rdesc->tdes3);
+  }
+  reg_write_32(INT1_CLR, 0xffffffff);
 }
 
 void irq_enable(int IRQn)
 {
+  reg_write_32(INT1_CLR, 0xffffffff);
+  reg_write_32(INT1_POL, 0xffffffff);
+  reg_write_32(INT1_EDGE, 0);
+  reg_write_32(INT1_EN, reg_read_32(INT1_EN)|(1<<3));
 }
 
 void dump_data(uint32_t *buf) {
@@ -253,18 +283,18 @@ void dump_data(uint32_t *buf) {
   }
 }
 
-desc_t *rdesc = NULL;
+// parameter unused
 void check_recv(mac_t *test_mac)
 {
-    if (!rdesc) return;
-    if (rdesc->tdes0 & DescOwnByDma) return;
-    dump_data((uint32_t*)PA2VA(rdesc->tdes2));
-    if ((rdesc->tdes1 & RxDescEndOfRing) != 0) {
-      do_unblock_one(&recv_block_queue);
-      rdesc = NULL;
-      return;
+    desc_t *rdesc = (desc_t*)test_mac->rd;
+    while ((rdesc->tdes0 & DescOwnByDma) == 0) {
+      dump_data((uint32_t*)PA2VA(rdesc->tdes2));
+      if ((rdesc->tdes1 & RxDescEndOfRing) != 0) {
+        rdesc = NULL;
+        return;
+      }
+      rdesc = (desc_t*)PA2VA(rdesc->tdes3);
     }
-    rdesc = (desc_t*)PA2VA(rdesc->tdes3);
 }
 
 void set_sram_ctr()
@@ -322,7 +352,7 @@ uint32_t do_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr)
     }
     for (i=0; i<num; i++)
       reg_write_32(DMA_BASE_ADDR + DmaRxPollDemand, 1);
-    rdesc = (desc_t*)rd;
+    rlast = p;
     return 0;
 }
 
