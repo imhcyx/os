@@ -237,6 +237,19 @@ void print_rx_dscrb(mac_t *mac)
 #endif
 }
 
+/**
+ * Clears all the pending interrupts.
+ * If the Dma status register is read then all the interrupts gets cleared
+ * @param[in] pointer to synopGMACdevice.
+ * \return returns void.
+ */
+void clear_interrupt()
+{
+    uint32_t data;
+    data = reg_read_32(0xbfe11000 + DmaStatus);
+    reg_write_32(0xbfe11000 + DmaStatus, data);
+}
+
 #define INT1_EN  0xbfd0105c
 #define INT1_CLR 0xbfd01064
 #define INT1_POL 0xbfd01068

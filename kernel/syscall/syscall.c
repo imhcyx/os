@@ -144,6 +144,18 @@ static int _wait_recv_package(int arg1, int arg2, int arg3) {
   return 0;
 }
 
+static int _fopen(int arg1, int arg2, int arg3) {
+}
+
+static int _fread(int arg1, int arg2, int arg3) {
+}
+
+static int _fwrite(int arg1, int arg2, int arg3) {
+}
+
+static int _close(int arg1, int arg2, int arg3) {
+}
+
 void init_syscall_table() {
 #define def_syscall(x) syscall[syscall_##x] = _##x
   def_syscall(spawn);
@@ -172,6 +184,10 @@ void init_syscall_table() {
   def_syscall(net_send);
   def_syscall(net_recv);
   def_syscall(wait_recv_package);
+  def_syscall(fopen);
+  def_syscall(fread);
+  def_syscall(fwrite);
+  def_syscall(close);
 }
 
 int system_call_helper()
@@ -302,4 +318,20 @@ uint32_t sys_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr) {
 
 void sys_wait_recv_package() {
   invoke_syscall(syscall_wait_recv_package, IGNORE, IGNORE, IGNORE);
+}
+
+int sys_fopen(char *name) {
+  return invoke_syscall(syscall_fopen, (int)name, IGNORE, IGNORE);
+}
+
+void sys_fread(int fd, void *buf, uint32_t size) {
+  invoke_syscall(syscall_fread, fd, (int)buf, (int)size);
+}
+
+void sys_fwrite(int fd, void *buf, uint32_t size) {
+  invoke_syscall(syscall_fwrite, fd, (int)buf, (int)size);
+}
+
+void sys_close(int fd) {
+  invoke_syscall(syscall_close, fd, IGNORE, IGNORE);
 }

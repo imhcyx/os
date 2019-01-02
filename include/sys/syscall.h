@@ -70,6 +70,11 @@ enum {
   syscall_net_recv,
   syscall_wait_recv_package,
 
+  syscall_fopen,
+  syscall_fread,
+  syscall_fwrite,
+  syscall_close,
+
   NUM_SYSCALLS
 
 };
@@ -114,5 +119,10 @@ void sys_init_mac();
 void sys_net_send(uint32_t td, uint32_t td_phy);
 uint32_t sys_net_recv(uint32_t rd, uint32_t rd_phy, uint32_t daddr);
 void sys_wait_recv_package();
+
+int sys_fopen(char*);
+void sys_fread(int, void*, uint32_t);
+void sys_fwrite(int, void*, uint32_t);
+void sys_close(int);
 
 #endif

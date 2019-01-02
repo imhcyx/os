@@ -74,12 +74,10 @@ char read_uart_ch(void)
     return ch;
 }
 
-struct task_info task4_1 = {"send",(uint32_t)&phy_regs_task1, USER_PROCESS};
-struct task_info task4_2 = {"recv",(uint32_t)&phy_regs_task2, USER_PROCESS};
-struct task_info task4_3 = {"initmac",(uint32_t)&phy_regs_task3, USER_PROCESS};
+struct task_info task = {"fs",(uint32_t)&test_fs, USER_PROCESS};
 
-static struct task_info *test_tasks[] = {&task4_3,&task4_1,&task4_2};
-static int num_test_tasks = 3;
+static struct task_info *test_tasks[] = {&task};
+static int num_test_tasks = 1;
 
 #define SHELL_Y 21
 #define SHELL_HEIGHT (SCREEN_HEIGHT-SHELL_Y-1)
