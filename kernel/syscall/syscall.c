@@ -145,15 +145,22 @@ static int _wait_recv_package(int arg1, int arg2, int arg3) {
 }
 
 static int _fopen(int arg1, int arg2, int arg3) {
+  return fs_open((char*)arg1);
 }
 
 static int _fread(int arg1, int arg2, int arg3) {
+  fs_read(arg1, (char*)arg2, arg3);
+  return 0;
 }
 
 static int _fwrite(int arg1, int arg2, int arg3) {
+  fs_write(arg1, (char*)arg2, arg3);
+  return 0;
 }
 
 static int _close(int arg1, int arg2, int arg3) {
+  fs_close(arg1);
+  return 0;
 }
 
 void init_syscall_table() {

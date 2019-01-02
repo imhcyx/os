@@ -17,7 +17,7 @@ void vt100_move_cursor(int x, int y)
 }
 
 /* clear screen */
-static void vt100_clear()
+void vt100_clear()
 {
     // \033[2J
     printk("%c[2J", 27);

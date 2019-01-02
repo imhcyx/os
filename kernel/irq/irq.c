@@ -7,6 +7,7 @@ void panic(char *desc) {
   // PANIC
   uint32_t status, cause, epc, badvaddr;
   int i;
+  disable_interrupt();
   status = current_running->context.cp0_status;
   cause = current_running->context.cp0_cause;
   epc = current_running->context.cp0_epc;

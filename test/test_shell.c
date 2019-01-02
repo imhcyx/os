@@ -287,6 +287,13 @@ static void exec_command(char *cmd) {
     }
     return;
   }
+  else if (!strcmp(token, "mkfs")) {
+    fs_mkfs(1<<31);
+    return;
+  }
+  else if (!strcmp(token, "statfs")) {
+    fs_stat();
+  }
 #if 0
   else if (!strcmp(token, "sr")) {
     // for debug only
@@ -302,6 +309,7 @@ static void exec_command(char *cmd) {
     return;
   }
 #endif
+#if 0
   else if (!strcmp(token, "mac")) {
     screen_clear();
     screen_move_cursor(0, 0);
@@ -314,6 +322,7 @@ static void exec_command(char *cmd) {
     printf_dma_regs();
     return;
   }
+#endif
   else if (!strcmp(token, "d")) {
     uint32_t val;
     cmd = tokenize(cmd, token, sizeof(token));
@@ -343,6 +352,7 @@ static void exec_command(char *cmd) {
     shell_printf("set %08x to %08x\n", val, val2);
     return;
   }
+#if 0
   else if (!strcmp(token, "bonus")) {
     extern void(*mac_int_handler)();
     extern void irq_mac();
@@ -364,6 +374,7 @@ static void exec_command(char *cmd) {
     shell_printf("missing parameter\n");
     return;
   }
+#endif
   else if (!strcmp(token, "")) {
     return;
   }
