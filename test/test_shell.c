@@ -296,7 +296,12 @@ static void exec_command(char *cmd) {
     return;
   }
   else if (!strcmp(token, "ls")) {
-    fs_list();
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      fs_list(0);
+      return;
+    }
+    fs_list(token);
     return;
   }
   else if (!strcmp(token, "cd")) {

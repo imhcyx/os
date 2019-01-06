@@ -305,11 +305,19 @@ void fs_unlink(char *name) {
   remove_inode(find_inode(name, 1));
 }
 
-void fs_list() {
+void fs_list(char *path) {
+  uint32_t ino;
   struct inode inode, inodechild;
   int i;
   ensure_cwd();
-  sdread(&inode, current_running->curdir, sizeof(inode));
+  ino = current_running->curdir;
+  if (path) {
+    ino = parse_path(path);
+    sdread(&inode, ino, sizeof(inode));
+    if (inode.type != INODE_DIR)
+      shell_printf("%s %u %s\n", "FILE", inode.size, inode.name);
+  }
+  sdread(&inode, ino, sizeof(inode));
   for (i=0; i<8; i++)
     if (inode.direct[i]) {
       sdread(&inodechild, inode.direct[i], sizeof(inodechild));
