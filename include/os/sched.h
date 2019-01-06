@@ -131,7 +131,7 @@ typedef struct pcb
     uint32_t curdir;
 
     /* file descriptors */
-    struct fd *fd[PCB_MAX_FD];
+    struct fd fd[PCB_MAX_FD];
 
 } pcb_t;
 

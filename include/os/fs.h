@@ -35,7 +35,9 @@ struct inode {
 
 struct fd {
   uint32_t inode; // absolute, 0 if unused
-  uint32_t offset; // relative to file
+  uint32_t readoffset; // relative to file
+  uint32_t writeoffset; // relative to file
+  uint32_t size;
 };
 
 int fs_open(char*);

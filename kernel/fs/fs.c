@@ -131,7 +131,7 @@ static uint32_t find_inode(char *name, int remove) {
   return 0;
 }
 
-static uint32_t create_node(char *name, int type) {
+static uint32_t create_inode(char *name, int type) {
   struct inode inode, inodechild;
   int i;
   sdread(&inode, current_running->curdir, sizeof(inode));
@@ -214,17 +214,148 @@ void fs_stat() {
   printf("blocks offset: 0x%08x\n", super.off_blocks);
 }
 
+static int alloc_fd() {
+  int i;
+  for (i=0; i<PCB_MAX_FD; i++)
+    if (current_running->fd[i].inode == 0)
+      return i;
+  return -1;
+}
+
 int fs_open(char* name) {
+  int fd;
+  uint32_t ino;
+  struct inode inode;
   ensure_cwd();
+  ino = create_inode(name, INODE_FILE);
+  if (!ino) return -1;
+  sdread(&inode, ino, sizeof(inode));
+  fd = alloc_fd();
+  if (fd<0) return -1;
+  current_running->fd[fd].inode = ino;
+  current_running->fd[fd].readoffset = 0;
+  current_running->fd[fd].writeoffset = 0;
+  current_running->fd[fd].size = inode.size;
+  return fd;
+}
+
+static uint32_t locate_file_datablock(uint32_t ino, uint32_t offset) {
+  struct inode inode;
+  uint32_t block[1024];
+  uint32_t sdloc, indirect;
+  sdread(&inode, ino, sizeof(inode));
+  // direct
+  if (offset <= 8*4096) {
+    sdloc = inode.direct[offset/4096];
+    if (!sdloc) {
+      sdloc = alloc_block();
+      inode.direct[offset/4096] = sdloc;
+      sdwrite(&inode, ino, sizeof(inode));
+      memset(block, 0, sizeof(block));
+      sdwrite(block, sdloc, sizeof(block));
+    }
+    return sdloc;
+  }
+  // indirect
+  offset -= 8*4096;
+  if (offset <= 1024*4096) {
+    if (!inode.indirect) {
+      inode.indirect = alloc_block();
+      sdwrite(&inode, ino, sizeof(inode));
+      memset(block, 0, sizeof(block));
+      sdwrite(block, inode.indirect, sizeof(block));
+    }
+    else {
+      sdread(block, inode.indirect, sizeof(block));
+    }
+    sdloc = block[offset/4096];
+    if (!sdloc) {
+      sdloc = alloc_block();
+      block[offset/4096] = sdloc;
+      sdwrite(block, inode.indirect, sizeof(block));
+      memset(block, 0, sizeof(block));
+      sdwrite(block, sdloc, sizeof(block));
+    }
+    return sdloc;
+  }
+  // double indirect
+  offset -= 1024*4096;
+  if (!inode.indirect2) {
+    inode.indirect2 = alloc_block();
+    sdwrite(&inode, ino, sizeof(inode));
+    memset(block, 0, sizeof(block));
+    sdwrite(block, inode.indirect2, sizeof(block));
+  }
+  else {
+    sdread(block, inode.indirect2, sizeof(block));
+  }
+  indirect = block[offset/(1024*4096)];
+  if (!indirect) {
+    indirect = alloc_block();
+    block[offset/(1024*4096)] = indirect;
+    sdwrite(block, inode.indirect2, sizeof(block));
+    memset(block, 0, sizeof(block));
+    sdwrite(block, indirect, sizeof(block));
+  }
+  else {
+    sdread(block, indirect, sizeof(block));
+  }
+  offset %= 1024*4096;
+  sdloc = block[offset/4096];
+  if (!sdloc) {
+    sdloc = alloc_block();
+    block[offset/4096] = sdloc;
+    sdwrite(block, indirect, sizeof(block));
+    memset(block, 0, sizeof(block));
+    sdwrite(block, sdloc, sizeof(block));
+  }
+  return sdloc;
+  return 0;
 }
 
 void fs_read(int fd, char* buf, uint32_t size) {
+  struct fd *pfd = &current_running->fd[fd];
+  uint32_t current = pfd->readoffset;
+  pfd->readoffset += size;
+  uint32_t end = pfd->readoffset;
+  uint32_t block;
+  uint32_t bunchsize;
+  while (current<end) {
+    block = locate_file_datablock(pfd->inode, current);
+    bunchsize = (current & ~4095) + 4096 - current;
+    if (current+bunchsize>end) bunchsize = end-current;
+    sdread(buf, block+(current%4096), bunchsize);
+    buf += bunchsize;
+    current += bunchsize;
+  }
+  if (current > pfd->size) pfd->size = current;
 }
 
 void fs_write(int fd, char* buf, uint32_t size) {
+  struct fd *pfd = &current_running->fd[fd];
+  uint32_t current = pfd->writeoffset;
+  pfd->writeoffset += size;
+  uint32_t end = pfd->writeoffset;
+  uint32_t block;
+  uint32_t bunchsize;
+  while (current<end) {
+    block = locate_file_datablock(pfd->inode, current);
+    bunchsize = (current & ~4095) + 4096 - current;
+    if (current+bunchsize>end) bunchsize = end-current;
+    sdwrite(buf, block+(current%4096), bunchsize);
+    buf += bunchsize;
+    current += bunchsize;
+  }
+  if (current > pfd->size) pfd->size = current;
 }
 
 void fs_close(int fd) {
+  uint32_t ino = current_running->fd[fd].inode;
+  struct inode inode;
+  sdread(&inode, ino, sizeof(inode));
+  inode.size = current_running->fd[fd].size;
+  sdwrite(&inode, ino, sizeof(inode));
+  current_running->fd[fd].inode = 0;
 }
 
 void fs_cwd(char *path) {
@@ -267,7 +398,7 @@ void fs_pwd(char *path) {
 
 void fs_mkdir(char *name) {
   ensure_cwd();
-  create_node(name, INODE_DIR);
+  create_inode(name, INODE_DIR);
 }
 
 static void remove_datablock(uint32_t offset, int indirect) {
