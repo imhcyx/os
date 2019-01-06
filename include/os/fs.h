@@ -1,5 +1,5 @@
 #ifndef _FS_H
-#define _FS_h
+#define _FS_H
 
 #include "type.h"
 
@@ -21,9 +21,11 @@ enum {
   INODE_FILE
 };
 
+// for both file and directory
+// currently only up to 8 files in a directory supported using 8 direct pointers
 struct inode {
   int type;
-  uint32_t size;
+  uint32_t size; // for file only
   uint32_t parent; // absolute
   uint32_t direct[8]; // absolute
   uint32_t indirect; // absolute

@@ -42,14 +42,10 @@ static pcb_t *pcb_alloc(task_type_t type)
   }
   if (!proc) return NULL;
 
+  memset(proc, 0, sizeof(pcb_t));
   proc->pid = process_id++;
   proc->type = type;
   proc->status = TASK_INIT;
-  proc->spfunc = NULL;
-  proc->queue = NULL;
-
-  proc->prev = NULL;
-  proc->next = NULL;
 
   queue_init(&proc->waitqueue);
 

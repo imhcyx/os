@@ -32,6 +32,7 @@
 #include "type.h"
 #include "queue.h"
 #include "mm.h"
+#include "fs.h"
 
 #define NUM_MAX_TASK 16
 
@@ -69,6 +70,8 @@ typedef enum {
     USER_PROCESS,
     USER_THREAD,
 } task_type_t;
+
+#define PCB_MAX_FD 16
 
 /* Process Control Block */
 typedef struct pcb
@@ -123,6 +126,12 @@ typedef struct pcb
 
     /* page directory */
     struct pgd pgd;
+
+    /* current working directory (inode offset) */
+    uint32_t curdir;
+
+    /* file descriptors */
+    struct fd *fd[PCB_MAX_FD];
 
 } pcb_t;
 

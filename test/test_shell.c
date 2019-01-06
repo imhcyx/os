@@ -153,7 +153,7 @@ static void printstr(const char *str) {
   refresh();
 }
 
-static int shell_printf(const char *fmt, ...) {
+int shell_printf(const char *fmt, ...) {
   int ret;
   va_list va;
   char buf[256];
@@ -293,6 +293,38 @@ static void exec_command(char *cmd) {
   }
   else if (!strcmp(token, "statfs")) {
     fs_stat();
+    return;
+  }
+  else if (!strcmp(token, "ls")) {
+    fs_list();
+    return;
+  }
+  else if (!strcmp(token, "cd")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    sys_cwd(token);
+    return;
+  }
+  else if (!strcmp(token, "mkdir")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    sys_mkdir(token);
+    return;
+  }
+  else if (!strcmp(token, "rm")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    sys_unlink(token);
+    return;
   }
 #if 0
   else if (!strcmp(token, "sr")) {
@@ -392,7 +424,8 @@ void test_shell()
   scrinit();
   while (1)
   {
-    printstr("UCAS>");
+    sys_pwd(buf);
+    shell_printf("%s # ", buf);
     len = 0;
     while (1) {
       ch = 0;

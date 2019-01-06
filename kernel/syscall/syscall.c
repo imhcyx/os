@@ -163,6 +163,26 @@ static int _close(int arg1, int arg2, int arg3) {
   return 0;
 }
 
+static int _cwd(int arg1, int arg2, int arg3) {
+  fs_cwd((char*)arg1);
+  return 0;
+}
+
+static int _pwd(int arg1, int arg2, int arg3) {
+  fs_pwd((char*)arg1);
+  return 0;
+}
+
+static int _mkdir(int arg1, int arg2, int arg3) {
+  fs_mkdir((char*)arg1);
+  return 0;
+}
+
+static int _unlink(int arg1, int arg2, int arg3) {
+  fs_unlink((char*)arg1);
+  return 0;
+}
+
 void init_syscall_table() {
 #define def_syscall(x) syscall[syscall_##x] = _##x
   def_syscall(spawn);
@@ -195,6 +215,10 @@ void init_syscall_table() {
   def_syscall(fread);
   def_syscall(fwrite);
   def_syscall(close);
+  def_syscall(cwd);
+  def_syscall(pwd);
+  def_syscall(mkdir);
+  def_syscall(unlink);
 }
 
 int system_call_helper()
@@ -341,4 +365,20 @@ void sys_fwrite(int fd, void *buf, uint32_t size) {
 
 void sys_close(int fd) {
   invoke_syscall(syscall_close, fd, IGNORE, IGNORE);
+}
+
+void sys_cwd(char *name) {
+  invoke_syscall(syscall_cwd, (int)name, IGNORE, IGNORE);
+}
+
+void sys_pwd(char *name) {
+  invoke_syscall(syscall_pwd, (int)name, IGNORE, IGNORE);
+}
+
+void sys_mkdir(char *name) {
+  invoke_syscall(syscall_mkdir, (int)name, IGNORE, IGNORE);
+}
+
+void sys_unlink(char *name) {
+  invoke_syscall(syscall_unlink, (int)name, IGNORE, IGNORE);
 }

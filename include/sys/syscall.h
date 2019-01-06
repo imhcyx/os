@@ -74,6 +74,10 @@ enum {
   syscall_fread,
   syscall_fwrite,
   syscall_close,
+  syscall_cwd,
+  syscall_pwd,
+  syscall_mkdir,
+  syscall_unlink,
 
   NUM_SYSCALLS
 
@@ -124,5 +128,9 @@ int sys_fopen(char*);
 void sys_fread(int, void*, uint32_t);
 void sys_fwrite(int, void*, uint32_t);
 void sys_close(int);
+void sys_cwd(char*);
+void sys_pwd(char*);
+void sys_mkdir(char*);
+void sys_unlink(char*);
 
 #endif
