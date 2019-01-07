@@ -44,5 +44,6 @@ int fs_open(char*);
 void fs_read(int, char*, uint32_t);
 void fs_write(int, char*, uint32_t);
 void fs_close(int);
+void fs_seek(int, uint32_t);
 
 #endif

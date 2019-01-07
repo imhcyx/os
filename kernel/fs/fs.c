@@ -116,16 +116,18 @@ static uint32_t parse_path(char *path) {
 static uint32_t find_inode(char *name, int remove) {
   struct inode inode, inodechild;
   int i;
+  uint32_t ino;
   sdread(&inode, current_running->curdir, sizeof(inode));
   for (i=0; i<8; i++) {
     if (inode.direct[i] == 0) continue;
     sdread(&inodechild, inode.direct[i], sizeof(inodechild));
     if (!strcmp(name, inodechild.name)) {
+      ino = inode.direct[i];
       if (remove) {
         inode.direct[i] = 0;
         sdwrite(&inode, current_running->curdir, sizeof(inode));
       }
-      return inode.direct[i];
+      return ino;
     }
   }
   return 0;
@@ -364,6 +366,11 @@ void fs_close(int fd) {
   inode.size = current_running->fd[fd].size;
   sdwrite(&inode, ino, sizeof(inode));
   current_running->fd[fd].inode = 0;
+}
+
+void fs_seek(int fd, uint32_t offset) {
+  current_running->fd[fd].readoffset = offset;
+  current_running->fd[fd].writeoffset = offset;
 }
 
 void fs_cwd(char *path) {

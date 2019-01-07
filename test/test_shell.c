@@ -74,10 +74,11 @@ char read_uart_ch(void)
     return ch;
 }
 
-struct task_info task = {"fs",(uint32_t)&test_fs, USER_PROCESS};
+struct task_info task1 = {"fs",(uint32_t)&test_fs, USER_PROCESS};
+struct task_info task2 = {"largefs",(uint32_t)&test_largefs, USER_PROCESS};
 
-static struct task_info *test_tasks[] = {&task};
-static int num_test_tasks = 1;
+static struct task_info *test_tasks[] = {&task1, &task2};
+static int num_test_tasks = sizeof(test_tasks)/4;
 
 #define SHELL_Y 21
 #define SHELL_HEIGHT (SCREEN_HEIGHT-SHELL_Y-1)

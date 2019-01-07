@@ -163,6 +163,11 @@ static int _close(int arg1, int arg2, int arg3) {
   return 0;
 }
 
+static int _seek(int arg1, int arg2, int arg3) {
+  fs_seek(arg1, (uint32_t)arg2);
+  return 0;
+}
+
 static int _cwd(int arg1, int arg2, int arg3) {
   fs_cwd((char*)arg1);
   return 0;
@@ -215,6 +220,7 @@ void init_syscall_table() {
   def_syscall(fread);
   def_syscall(fwrite);
   def_syscall(close);
+  def_syscall(seek);
   def_syscall(cwd);
   def_syscall(pwd);
   def_syscall(mkdir);
@@ -365,6 +371,10 @@ void sys_fwrite(int fd, void *buf, uint32_t size) {
 
 void sys_close(int fd) {
   invoke_syscall(syscall_close, fd, IGNORE, IGNORE);
+}
+
+void sys_seek(int fd, uint32_t offset) {
+  invoke_syscall(syscall_seek, fd, (int)offset, IGNORE);
 }
 
 void sys_cwd(char *name) {
