@@ -459,9 +459,15 @@ void fs_list(char *path) {
   ino = current_running->curdir;
   if (path) {
     ino = parse_path(path);
+    if (ino == 0) {
+      shell_printf("%s not found\n", path);
+      return;
+    }
     sdread(&inode, ino, sizeof(inode));
-    if (inode.type != INODE_DIR)
+    if (inode.type != INODE_DIR) {
       shell_printf("%s %u %s\n", "FILE", inode.size, inode.name);
+      return;
+    }
   }
   sdread(&inode, ino, sizeof(inode));
   for (i=0; i<8; i++)
