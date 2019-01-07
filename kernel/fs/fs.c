@@ -338,11 +338,19 @@ void fs_write(int fd, char* buf, uint32_t size) {
   uint32_t end = pfd->writeoffset;
   uint32_t block;
   uint32_t bunchsize;
+  char buffer[4096];
   while (current<end) {
     block = locate_file_datablock(pfd->inode, current);
     bunchsize = (current & ~4095) + 4096 - current;
     if (current+bunchsize>end) bunchsize = end-current;
-    sdwrite(buf, block+(current%4096), bunchsize);
+    if ((current&4095)!=0 || bunchsize<4096) {
+      sdread(buffer, block, 4096);
+      memcpy(buffer+(current%4096), buf, bunchsize);
+      sdwrite(buffer, block, 4096);
+    }
+    else {
+      sdwrite(buf, block, 4096);
+    }
     buf += bunchsize;
     current += bunchsize;
   }
