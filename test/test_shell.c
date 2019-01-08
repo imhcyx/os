@@ -76,8 +76,10 @@ char read_uart_ch(void)
 
 struct task_info task1 = {"fs",(uint32_t)&test_fs, USER_PROCESS};
 struct task_info task2 = {"largefs",(uint32_t)&test_largefs, USER_PROCESS};
+struct task_info task3 = {"initmac",(uint32_t)&phy_regs_task3, USER_PROCESS};
+struct task_info task4 = {"recv",(uint32_t)&phy_regs_task2, USER_PROCESS};
 
-static struct task_info *test_tasks[] = {&task1, &task2};
+static struct task_info *test_tasks[] = {&task1, &task2, &task3, &task4};
 static int num_test_tasks = sizeof(test_tasks)/4;
 
 #define SHELL_Y 21
@@ -347,7 +349,7 @@ static void exec_command(char *cmd) {
     return;
   }
 #endif
-#if 0
+#if 1
   else if (!strcmp(token, "mac")) {
     screen_clear();
     screen_move_cursor(0, 0);

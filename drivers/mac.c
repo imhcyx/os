@@ -256,6 +256,7 @@ void clear_interrupt()
 #define INT1_EDGE 0xbfd0106c
 
 desc_t *rlast = NULL;
+#if 0
 void irq_mac(void)
 {
   if (rlast && (rlast->tdes0 & DescOwnByDma) == 0) {
@@ -263,6 +264,13 @@ void irq_mac(void)
     rlast = NULL;
   }
   clear_interrupt();
+  reg_write_32(INT1_CLR, 0xffffffff);
+}
+#endif
+
+void irq_mac() {
+  clear_interrupt();
+  do_unblock_one(&recv_block_queue);
   reg_write_32(INT1_CLR, 0xffffffff);
 }
 
