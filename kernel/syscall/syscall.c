@@ -5,7 +5,7 @@
 #include "syscall.h"
 
 static int _spawn(int arg1, int arg2, int arg3) {
-  spawn((struct task_info*)arg1);
+  spawn((void*)arg1, arg2);
   return 0;
 }
 
@@ -244,8 +244,8 @@ int system_call_helper()
   }
 }
 
-void sys_spawn(task_info_t* task) {
-  invoke_syscall(syscall_spawn, (int)task, IGNORE, IGNORE);
+void sys_spawn(void* task, int isfile) {
+  invoke_syscall(syscall_spawn, (int)task, isfile, IGNORE);
 }
 
 

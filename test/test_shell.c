@@ -285,10 +285,18 @@ static void exec_command(char *cmd) {
     }
     i = myatoi(token);
     if (i>=0&&i<num_test_tasks) {
-      sys_spawn(test_tasks[i]);
+      sys_spawn(test_tasks[i], 0);
       shell_printf("task %s created\n", test_tasks[i]->name);
     }
     return;
+  }
+  else if (!strcmp(token, "run")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    sys_spawn(token, 1);
   }
   else if (!strcmp(token, "mkfs")) {
     fs_mkfs(1<<31);

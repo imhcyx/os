@@ -92,7 +92,7 @@ void init_syscall_table();
 int system_call_helper();
 extern int invoke_syscall(int, int, int, int);
 
-void sys_spawn(task_info_t*);
+void sys_spawn(void*, int);
 void sys_kill(int);
 void sys_exit();
 void sys_waitpid(int);

@@ -1,6 +1,6 @@
 CC = mipsel-linux-gcc
 
-all: clean createimage image asm sendpkt
+all: clean createimage image asm sendpkt program
 
 SRC_BOOT 	= $(wildcard ./arch/mips/boot/*.S)
 
@@ -45,11 +45,14 @@ createimage: $(SRC_IMAGE)
 sendpkt: $(SRC_PKT)
 	gcc -o $@ $^ -lpcap -lpthread -lnet
 
+program: executable/program.c executable/program.S
+	${CC} -G 0 -O2 -fno-pic -mno-abicalls -fno-builtin -nostdinc -mips3 -Ttext=0xffffffff00800000 -N -o $@ $^ -nostdlib -e main -Wl,-m -Wl,elf32ltsmip -T ld.script
+
 image: bootblock main
 	./createimage --extended bootblock main
 
 clean:
-	rm -rf bootblock image createimage main *.o sendpkt
+	rm -rf bootblock image createimage main *.o sendpkt program
 
 floppy:
 	sudo fdisk -l /dev/sdc

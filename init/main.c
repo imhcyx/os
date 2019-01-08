@@ -123,7 +123,7 @@ void __attribute__((section(".entry_function"))) _start(void)
 	while (1)
 	{
     struct task_info shell = {"shell", (uint32_t)&test_shell, USER_PROCESS, 10};
-    pcb_t *proc = spawn(&shell);
+    pcb_t *proc = spawn(&shell, 0);
     sys_waitpid(proc->pid);
 	};
 	return;

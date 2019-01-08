@@ -4,6 +4,8 @@
 #include "sched.h"
 #include "queue.h"
 #include "screen.h"
+#include "fs.h"
+#include "elf.h"
 
 pcb_t pcb[NUM_MAX_TASK];
 
@@ -16,8 +18,8 @@ pcb_t *current_running = NULL;
 /* global process id */
 pid_t process_id = 0;
 
-#define STACK_ALLOC_TOP 0xa0fff000
-#define STACK_ALLOC_SIZE 0x1000
+#define STACK_ALLOC_TOP 0xa0ff0000
+#define STACK_ALLOC_SIZE 0x10000
 uint32_t stack_alloc_ptr = STACK_ALLOC_TOP;
 
 // alloc a stack
@@ -58,9 +60,29 @@ static void pcb_free(pcb_t * pcb) {
   pcb->status = TASK_UNUSED;
 }
 
+static void loadelf() {
+  Elf32_Ehdr ehdr;
+  Elf32_Phdr phdr;
+  int fd = 0; // program file is opened as fd 0 by default
+  char *p;
+  sys_seek(fd, 0);
+  sys_fread(fd, &ehdr, sizeof(ehdr));
+  sys_seek(fd, ehdr.e_phoff);
+  sys_fread(fd, &phdr, sizeof(phdr));
+  sys_seek(fd, phdr.p_offset);
+  p = (char*)phdr.p_vaddr;
+  *p = 0; // trigger page allocator
+  sys_fread(fd, p, phdr.p_filesz);
+  p += phdr.p_filesz;
+  memset(p, 0, phdr.p_memsz-phdr.p_filesz);
+  current_running->entrypoint = ehdr.e_entry;
+}
+
 // this is the real entry point for each task
 static void task_init()
 {
+  // if executable file is not loaded, load it
+  if (!current_running->entrypoint) loadelf();
   ((void(*)())current_running->entrypoint)();
   // the task should be killed here
   for(;;) sys_exit();
@@ -166,9 +188,11 @@ static void sp_postwait(void *sparg) {
   pcb_free(proc);
 }
 
-pcb_t *spawn(struct task_info *task)
+pcb_t *spawn(void *obj, int isfile)
 {
   pcb_t *proc;
+  task_info_t *task = obj;
+  char *file = obj;
 
   proc = pcb_alloc(task->type);
   if (!proc) {
@@ -176,12 +200,14 @@ pcb_t *spawn(struct task_info *task)
     return NULL;
   }
 
-  // TODO: strncpy
-  strcpy(&proc->name, task->name);
-  // alloc stack (TODO:)
+  if (isfile)
+    strcpy(&proc->name, file);
+  else
+    strcpy(&proc->name, task->name);
+
   if (!proc->kernel_stack_top)
     proc->kernel_stack_top = alloc_stack();
-  if (task->type == USER_PROCESS || task->type == USER_THREAD)
+  if (isfile || task->type == USER_PROCESS || task->type == USER_THREAD)
     proc->stack_top = 0x7f000000;
   else
     proc->stack_top = proc->kernel_stack_top;
@@ -191,8 +217,13 @@ pcb_t *spawn(struct task_info *task)
   proc->context.regs[31] = (uint32_t)task_init;
   // set epc
   proc->context.cp0_epc = (uint32_t)task_init;
-  proc->entrypoint = task->entry_point;
-  proc->priority = task->priority;
+  if (isfile) {
+    fs_open2(file, &proc->fd[0]);
+  }
+  else {
+    proc->entrypoint = task->entry_point;
+    proc->priority = task->priority;
+  }
   proc->dynamic_priority = 0;
   proc->status = TASK_READY;
 

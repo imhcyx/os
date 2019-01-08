@@ -224,20 +224,25 @@ static int alloc_fd() {
   return -1;
 }
 
-int fs_open(char* name) {
-  int fd;
+int fs_open2(char*name, struct fd* pfd) {
   uint32_t ino;
   struct inode inode;
   ensure_cwd();
   ino = create_inode(name, INODE_FILE);
   if (!ino) return -1;
   sdread(&inode, ino, sizeof(inode));
+  pfd->inode = ino;
+  pfd->readoffset = 0;
+  pfd->writeoffset = 0;
+  pfd->size = inode.size;
+  return 0;
+}
+
+int fs_open(char* name) {
+  int fd;
   fd = alloc_fd();
   if (fd<0) return -1;
-  current_running->fd[fd].inode = ino;
-  current_running->fd[fd].readoffset = 0;
-  current_running->fd[fd].writeoffset = 0;
-  current_running->fd[fd].size = inode.size;
+  if (fs_open2(name, &current_running->fd[fd])<0) return -1;
   return fd;
 }
 

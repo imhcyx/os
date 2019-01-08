@@ -159,7 +159,7 @@ extern uint32_t initial_cp0_status;
 
 void sched_init();
 
-pcb_t *spawn(struct task_info*);
+pcb_t *spawn(void*, int);
 void kill(pcb_t*);
 void exit();
 void wait(pcb_t*);
