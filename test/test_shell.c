@@ -342,6 +342,29 @@ static void exec_command(char *cmd) {
     sys_unlink(token);
     return;
   }
+  else if (!strcmp(token, "touch")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    int fd = sys_fopen(token);
+    sys_close(fd);
+    return;
+  }
+  else if (!strcmp(token, "cat")) {
+    cmd = tokenize(cmd, token, sizeof(token));
+    if (!strcmp(token, "")) {
+      shell_printf("missing parameter\n");
+      return;
+    }
+    int fd = sys_fopen(token);
+    char buf[256];
+    sys_fread(fd, buf, 256);
+    shell_printf("%s", buf);
+    sys_close(fd);
+    return;
+  }
 #if 0
   else if (!strcmp(token, "sr")) {
     // for debug only
